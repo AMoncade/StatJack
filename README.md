@@ -1,7 +1,7 @@
 # ♠️ StatJack : Simulation Probabiliste de Blackjack
 
 > **Projet d'Intégration (Épreuve Synthèse de Programme)**
-> *Techniques de l'informatique - Hiver 2026*
+> *420-SF4-RE PROJET D'INTÉGRATION EN SCIENCES, INFORMATIQUE ET MATHÉMATIQUE - Hiver 2026*
 
 ---
 
