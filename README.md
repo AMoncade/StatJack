@@ -6,9 +6,9 @@
 ---
 
 ## 🎓 Contexte du Projet
-Ce projet est réalisé dans le cadre du cours final du DEC. Il vise à démontrer l'intégration des compétences acquises durant la formation technique, en fusionnant la **programmation logicielle avancée** et les **mathématiques appliquées**.
+Ce projet est réalisé dans le cadre du cours final du programme d'informatique. Il vise à démontrer l'intégration des compétences acquises durant notre parcours collegial, en fusionnant la **programmation logicielle avancée** et les **mathématiques appliquées**.
 
-L'objectif n'est pas de créer un jeu de hasard, mais un **outil pédagogique** permettant d'analyser l'efficacité des stratégies de jeu face aux lois statistiques (Loi des Grands Nombres).
+L'objectif n'est pas de créer un jeu de hasard, mais un **outil pédagogique** permettant d'analyser l'efficacité des stratégies de jeu face aux lois statistiques.
 
 ## 🔗 Intégration des Compétences du DEC
 
