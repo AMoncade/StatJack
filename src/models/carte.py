@@ -1,5 +1,6 @@
+import os
+
 class Carte:
-    #Représente une carte standard (ex: Valet de Coeur)
 
     #Constantes
     couleurs = ["❤️", "♦️", "♠️", "♣️"]
@@ -18,6 +19,21 @@ class Carte:
         else:
             return int(self.rang)
 
+
+    def get_image_path(self):
+        #Associer image = carte
+        #traduire les émojis
+        traduction_couleur = {
+            "❤️": "hearts",
+            "♦️": "diamonds",
+            "♠️": "spades",
+            "♣️": "clubs"}
+
+        # On récupère le nom
+        nom_couleur = traduction_couleur[self.couleur]
+
+        # On construit le chemin.
+        return os.path.join("cartes", f"{self.rang}_{nom_couleur}.png")
+
     def __str__(self):
-        #Affiche la carte "bien"
         return f"[{self.rang} {self.couleur}]"
