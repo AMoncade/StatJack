@@ -183,7 +183,7 @@ class FenetreJeu(QMainWindow):
                 self.lbl_compteur.setStyleSheet("font-size: 18px; font-weight: bold; color: darkgreen;")
 
         except Exception as e:
-            # ÇA C'EST POUR NOUS AIDER À DÉBOGUER
+            #debug
             print(f"BUG COMPTEUR : {e}")
             self.lbl_compteur.setText("Cartes : ? / 312")
 
@@ -192,7 +192,7 @@ class FenetreJeu(QMainWindow):
         lbl = QLabel()
         pixmap = QPixmap(chemin)
         if not pixmap.isNull():
-            pixmap = pixmap.scaled(160, 240, Qt.KeepAspectRatio, Qt.SmoothTransformation)  # MÊME TAILLE QU'EN HAUT !
+            pixmap = pixmap.scaled(160, 240, Qt.KeepAspectRatio, Qt.SmoothTransformation)
             lbl.setPixmap(pixmap)
         else:
             lbl.setText(str(carte))
