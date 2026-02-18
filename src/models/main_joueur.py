@@ -9,10 +9,17 @@ class MainJoueur:
 
     def __init__(self):
         self.cartes = []
+        self.mise = 0
+        self.est_double = False
 
     def ajouter_carte(self, carte):
         #Ajoute une carte à la main
         self.cartes.append(carte)
+
+    def retirer_carte(self):
+        if self.cartes:
+            return self.cartes.pop()
+        return None
 
     def valeur_totale(self):
         #Gerer As = 1 ou 11
@@ -40,6 +47,15 @@ class MainJoueur:
     def est_busted(self):
         # Retourne True si la main dépasse 21
         return self.valeur_totale() > 21
+
+    def peut_split(self):
+        #2 fois la meme carte pour split
+        return (len(self.cartes) == 2
+                and self.cartes[0].valeur_blackjack() == self.cartes[1].valeur_blackjack())
+
+    def peut_double(self):
+        #maximum 2 cartes pour doubler
+        return len(self.cartes) == 2
 
     def __str__(self):
      # Afficher main

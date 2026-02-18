@@ -8,11 +8,13 @@ class Sabot:
     def __init__(self, nb_paquets = 6):
         self.nb_paquets = nb_paquets
         self.cartes = []
+        self.running_count = 0
         self.initialiser_sabot()
 
     def initialiser_sabot(self):
         #Crée les cartes
         self.cartes = []
+        self.running_count = 0
         for _ in range(self.nb_paquets):
             for couleur in Carte.couleurs:
                 for rang in Carte.rang:
@@ -22,14 +24,20 @@ class Sabot:
 
     def melanger(self):
         #Mélange aléatoire
+        self.running_count = 0
         random.shuffle(self.cartes)
 
     def tirer(self):
-        #Retire la carte du dessus et la retourne (None si c'est vide)
+        # Retire la carte du dessus et la retourne (None si c'est vide)
         if len(self.cartes) > 0:
-            return self.cartes.pop()
-        else:
-            return None
+            carte = self.cartes.pop()
+            self.running_count += carte.valeur_hilo()
+            return carte
+        return None
 
     def cartes_restantes(self):
         return len(self.cartes)
+
+    def true_count(self):
+        paquets_restants = max(self.cartes_restantes() / 52, 0.5)
+        return self.running_count / paquets_restants

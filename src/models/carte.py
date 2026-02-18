@@ -19,6 +19,15 @@ class Carte:
         else:
             return int(self.rang)
 
+    def valeur_hilo(self):
+        v = self.valeur_blackjack()
+        if v <= 6:
+            return 1
+        elif v <= 9:
+            return 0
+        else:
+            return -1
+
 
     def get_image_path(self):
         #Associer image = carte
