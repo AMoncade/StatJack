@@ -42,3 +42,5 @@ Ce projet valide les axes de formation suivants :
 
 ---
 *Développé dans le cadre du cours "Projet d'intégration" au Cégep.*
+
+analyse: https://1drv.ms/w/c/cbccbcda01405813/IQD0b8YEEk-0QJC7kS6ey4HVATgH1v-i00KOF11j9KeUFrU?e=Rt8VQe
