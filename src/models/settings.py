@@ -6,12 +6,13 @@ class Settings:
     chemin_dossier = Path.home() / ".statjack"
     chemin_fichier = chemin_dossier / "settings.json"
 
-    defaut = {
+    DEFAUTS = {
         "musique": True,
         "sons": True,
         "nb_paquets": 6,
         "argent": 10000,
     }
+
 
     def __init__(self):
         self._data = dict(self.defaut)
