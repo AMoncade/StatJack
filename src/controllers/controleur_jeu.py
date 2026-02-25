@@ -128,9 +128,15 @@ class ControleurJeu:
                 self.jeu.joueur, self.jeu.sabot) * 100
             pct_am = CalculateurProbabilites.probabilite_ameliorer(
                 self.jeu.joueur, self.jeu.sabot) * 100
-            self.vue.maj_probabilites(pct_bust, pct_am)
+
+            # Lancer la simulation Monte Carlo
+            stats_actions = CalculateurProbabilites.simuler_monte_carlo(
+                self.jeu.joueur, self.jeu.dealer, self.jeu.sabot, nb_simulations=500
+            )
+
+            self.vue.maj_probabilites(pct_bust, pct_am, stats_actions)
         else:
-            self.vue.maj_probabilites(0, 0)
+            self.vue.maj_probabilites(0, 0, None)
             self.vue.lbl_bust.setText("Bust : --")
             self.vue.lbl_ameliorer.setText("Améliorer (17-21) : --")
 

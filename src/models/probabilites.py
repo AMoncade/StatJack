@@ -1,5 +1,7 @@
 from src.models.sabot import Sabot
 from src.models.main_joueur import MainJoueur
+import random
+import copy
 
 
 def _total_avec_carte(main_joueur, carte):
@@ -103,3 +105,69 @@ class CalculateurProbabilites:
             gains_cumules.append(total / (i + 1))
 
         return gains_cumules
+
+    @staticmethod
+    def simuler_monte_carlo(main_joueur, dealer, sabot, nb_simulations=500):
+        if not dealer.cartes or not main_joueur.cartes:
+            return {}
+
+        carte_visible_dealer = dealer.cartes[0].valeur_blackjack()
+        valeur_initiale_joueur = main_joueur.valeur_totale()
+
+        # Liste des valeurs de cartes restantes pour tirer rapidement au hasard
+        valeurs_dispo = [c.valeur_blackjack() for c in sabot.cartes]
+        if not valeurs_dispo:
+            return {}
+
+        stats = {}
+        actions_possibles = ["Stand", "Hit"]
+        if main_joueur.peut_double():
+            actions_possibles.append("Double")
+
+        for action in actions_possibles:
+            victoires = 0
+
+            for _ in range(nb_simulations):
+                total_joueur = valeur_initiale_joueur
+                as_joueur = sum(1 for c in main_joueur.cartes if c.rang == "A")
+
+                # Le joueur joue son action virtuelle
+                if action == "Hit" or action == "Double":
+                    carte_tiree = random.choice(valeurs_dispo)
+                    if carte_tiree == 11: as_joueur += 1
+                    total_joueur += carte_tiree
+
+                    # Ajustement des As si on dépasse 21
+                    while total_joueur > 21 and as_joueur > 0:
+                        total_joueur -= 10
+                        as_joueur -= 1
+
+                if total_joueur > 21:
+                    continue  # Défaite automatique (Bust)
+
+                # Le dealer joue (règle: s'arrête à 17)
+                total_dealer = carte_visible_dealer
+                as_dealer = 1 if carte_visible_dealer == 11 else 0
+                # On assume que la carte cachée est tirée aléatoirement
+
+                while total_dealer < 17:
+                    carte_dealer = random.choice(valeurs_dispo)
+                    if carte_dealer == 11: as_dealer += 1
+                    total_dealer += carte_dealer
+
+                    while total_dealer > 21 and as_dealer > 0:
+                        total_dealer -= 10
+                        as_dealer -= 1
+
+                # Qui gagne ?
+                if total_dealer > 21 or total_joueur > total_dealer:
+                    victoires += 1
+                elif total_joueur == total_dealer and action == "Double":
+                    # Au double, une égalité rembourse, ce n'est pas une vraie "victoire" complète,
+                    # mais on peut compter 0.5 victoire pour la statistique.
+                    victoires += 0.5
+
+                    # Calcul du pourcentage
+            stats[action] = (victoires / nb_simulations) * 100
+
+        return stats

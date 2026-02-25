@@ -275,10 +275,23 @@ class VueJeu(QWidget):
         self.lbl_ameliorer.setStyleSheet("font-size: 14px; color: #51cf66; padding: 4px;")
         layout_sidebar.addWidget(self.lbl_ameliorer)
 
-        sep = QFrame()
-        sep.setFrameShape(QFrame.HLine)
-        sep.setStyleSheet("color: #444;")
-        layout_sidebar.addWidget(sep)
+        # % de victoire
+        sep_stats = QFrame()
+        sep_stats.setFrameShape(QFrame.HLine)
+        sep_stats.setStyleSheet("color: #444;")
+        layout_sidebar.addWidget(sep_stats)
+
+        self.lbl_win_stand = QLabel("Stand (Gagner) : --")
+        self.lbl_win_stand.setStyleSheet("font-size: 14px; color: #FFF; padding: 4px;")
+        layout_sidebar.addWidget(self.lbl_win_stand)
+
+        self.lbl_win_hit = QLabel("Hit (Gagner) : --")
+        self.lbl_win_hit.setStyleSheet("font-size: 14px; color: #FFF; padding: 4px;")
+        layout_sidebar.addWidget(self.lbl_win_hit)
+
+        self.lbl_win_double = QLabel("Double (Gagner) : --")
+        self.lbl_win_double.setStyleSheet("font-size: 14px; color: #FFF; padding: 4px;")
+        layout_sidebar.addWidget(self.lbl_win_double)
 
         self.lbl_true_count = QLabel("True Count : --")
         self.lbl_true_count.setStyleSheet(
@@ -438,7 +451,7 @@ class VueJeu(QWidget):
         QTimer.singleShot(200, phase2)
         QTimer.singleShot(500, phase3)
 
-    def maj_probabilites(self, pct_bust, pct_ameliorer):
+    def maj_probabilites(self, pct_bust, pct_ameliorer, stats_actions=None):
         self.lbl_bust.setText(f"Bust : {pct_bust:.1f}%")
         self.lbl_ameliorer.setText(f"Améliorer (17-21) : {pct_ameliorer:.1f}%")
 
@@ -448,6 +461,23 @@ class VueJeu(QWidget):
             self.lbl_bust.setStyleSheet("font-size: 14px; color: #ff6b6b; padding: 4px;")
         else:
             self.lbl_bust.setStyleSheet("font-size: 14px; color: #ffd93d; padding: 4px;")
+
+        # Affichage des stats Monte Carlo
+        if stats_actions:
+            self.lbl_win_stand.setText(f"Stand (Gagner) : {stats_actions.get('Stand', 0):.1f}%")
+            self.lbl_win_hit.setText(f"Hit (Gagner) : {stats_actions.get('Hit', 0):.1f}%")
+
+            # Griser le Double s'il n'est pas possible
+            if 'Double' in stats_actions:
+                self.lbl_win_double.setText(f"Double (Gagner) : {stats_actions['Double']:.1f}%")
+                self.lbl_win_double.setStyleSheet("font-size: 14px; color: #FFF; padding: 4px;")
+            else:
+                self.lbl_win_double.setText("Double (Gagner) : --")
+                self.lbl_win_double.setStyleSheet("font-size: 14px; color: #555; padding: 4px;")
+        else:
+            self.lbl_win_stand.setText("Stand (Gagner) : --")
+            self.lbl_win_hit.setText("Hit (Gagner) : --")
+            self.lbl_win_double.setText("Double (Gagner) : --")
 
     def maj_comptage(self, running, true_count, cartes_restantes, total_cartes, avantage):
         self.lbl_running_count.setText(f"Running Count : {running:+d}")
