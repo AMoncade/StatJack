@@ -119,20 +119,69 @@ class ControleurJeu:
             self.jeu.mains_joueur, self.jeu.index_main_active
         )
         self.vue.afficher_infos_dealer(self.jeu.dealer, reveler=reveler)
+
+        # IMPORTANT: on continue d'afficher "joueur" comme avant,
+        # mais pour les probas on va utiliser la main active (split-friendly).
         self.vue.afficher_infos_joueur(self.jeu.joueur)
+
         self._rafraichir_argent()
 
-        # Probabilites
+        # Probabilités (nouveau module)
         if not reveler:
-            pct_bust = CalculateurProbabilites.probabilite_bust(
-                self.jeu.joueur, self.jeu.sabot) * 100
-            pct_am = CalculateurProbabilites.probabilite_ameliorer(
-                self.jeu.joueur, self.jeu.sabot) * 100
-            self.vue.maj_probabilites(pct_bust, pct_am)
+            # main active (si split)
+            try:
+                main_active = self.jeu.mains_joueur[self.jeu.index_main_active]
+            except Exception:
+                main_active = self.jeu.joueur  # fallback
+
+            dealer_upcard = self.jeu.dealer.cartes[0] if self.jeu.dealer.cartes else None
+
+            if dealer_upcard is None:
+                self.vue.maj_probabilites(0, 0)
+                self.vue.lbl_bust.setText("Bust : --")
+                self.vue.lbl_ameliorer.setText("Recommendation / EV : --")
+            else:
+                try:
+                    spot = CalculateurProbabilites.resume_spot(
+                        main_joueur=main_active,
+                        dealer_upcard=dealer_upcard,
+                        sabot=self.jeu.sabot,
+                        nb_simulations_dealer=5000
+                    )
+
+                    pct_bust = spot.get("p_bust_si_hit", 0.0) * 100.0
+
+                    reco = spot.get("recommandation", "--")
+                    ev_stand = spot.get("ev_stand", 0.0)
+
+                    # NOTE: dans ton module actuel, "ev_hit_1x" = EV optimal (hit récursif vs stand)
+                    ev_opt = spot.get("ev_hit_1x", 0.0)
+
+                    edge_pct = (ev_opt - ev_stand) * 100.0
+
+                    # On conserve la signature existante (2 nombres)
+                    self.vue.maj_probabilites(pct_bust, edge_pct)
+
+                    self.vue.lbl_bust.setText(f"Bust : {pct_bust:.1f}%")
+                    self.vue.lbl_ameliorer.setText(
+                        f"Reco : {reco} | EV stand : {ev_stand:+.3f} | EV opt : {ev_opt:+.3f}"
+                    )
+
+                    # Optionnel : si ta vue a un widget pour afficher la distribution de hit
+                    if hasattr(self.vue, "maj_distribution_hit"):
+                        self.vue.maj_distribution_hit(
+                            spot.get("distribution_total_si_hit", {})
+                        )
+
+                except Exception:
+                    # Si clone/retirer_* ou autre n'est pas dispo, on ne casse pas l'UI
+                    self.vue.maj_probabilites(0, 0)
+                    self.vue.lbl_bust.setText("Bust : --")
+                    self.vue.lbl_ameliorer.setText("Reco / EV : --")
         else:
             self.vue.maj_probabilites(0, 0)
             self.vue.lbl_bust.setText("Bust : --")
-            self.vue.lbl_ameliorer.setText("Améliorer (17-21) : --")
+            self.vue.lbl_ameliorer.setText("Reco / EV : --")
 
         # Comptage
         sabot = self.jeu.sabot

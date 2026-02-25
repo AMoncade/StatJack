@@ -2,7 +2,6 @@ import os
 
 class Carte:
 
-    #Constantes
     couleurs = ["❤️", "♦️", "♠️", "♣️"]
     rang = ["2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"]
 
@@ -11,7 +10,6 @@ class Carte:
         self.couleur = couleur
 
     def valeur_blackjack(self):
-        #Retourne la valeur numérique. 10 pour les faces, 11 pour l'As (par défaut, pas oublier de mettre = 1 + tard)
         if self.rang in ["J", "Q", "K"]:
             return 10
         elif self.rang == "A":
@@ -28,20 +26,23 @@ class Carte:
         else:
             return -1
 
+    def __eq__(self, other):
+        if not isinstance(other, Carte):
+            return False
+        return self.rang == other.rang and self.couleur == other.couleur
+
+    def __hash__(self):
+        return hash((self.rang, self.couleur))
 
     def get_image_path(self):
-        #Associer image = carte
-        #traduire les émojis
         traduction_couleur = {
             "❤️": "hearts",
             "♦️": "diamonds",
             "♠️": "spades",
-            "♣️": "clubs"}
+            "♣️": "clubs"
+        }
 
-        # On récupère le nom
         nom_couleur = traduction_couleur[self.couleur]
-
-        # On construit le chemin.
         return os.path.join("cartes", f"{self.rang}_{nom_couleur}.png")
 
     def __str__(self):

@@ -424,16 +424,42 @@ class VueJeu(QWidget):
         QTimer.singleShot(200, phase2)
         QTimer.singleShot(500, phase3)
 
-    def maj_probabilites(self, pct_bust, pct_ameliorer):
+    def maj_probabilites(self, pct_bust, edge_pct):
+        # Bust %
         self.lbl_bust.setText(f"Bust : {pct_bust:.1f}%")
-        self.lbl_ameliorer.setText(f"Améliorer (17-21) : {pct_ameliorer:.1f}%")
 
+        # Edge EV (différence entre EV optimal et EV stand)
+        self.lbl_ameliorer.setText(f"Edge (Hit vs Stand) : {edge_pct:+.1f}%")
+
+        # ---- Couleur Bust ----
         if pct_bust > 50:
-            self.lbl_bust.setStyleSheet("font-size: 14px; color: #ff0000; padding: 4px;")
+            self.lbl_bust.setStyleSheet(
+                "font-size: 14px; color: #ff0000; padding: 4px;"
+            )
         elif pct_bust > 25:
-            self.lbl_bust.setStyleSheet("font-size: 14px; color: #ff6b6b; padding: 4px;")
+            self.lbl_bust.setStyleSheet(
+                "font-size: 14px; color: #ff6b6b; padding: 4px;"
+            )
         else:
-            self.lbl_bust.setStyleSheet("font-size: 14px; color: #ffd93d; padding: 4px;")
+            self.lbl_bust.setStyleSheet(
+                "font-size: 14px; color: #ffd93d; padding: 4px;"
+            )
+
+        # ---- Couleur Edge EV ----
+        if edge_pct > 0:
+            # Avantage à hit
+            self.lbl_ameliorer.setStyleSheet(
+                "font-size: 14px; color: #00c853; padding: 4px;"
+            )
+        elif edge_pct < 0:
+            # Avantage à stand
+            self.lbl_ameliorer.setStyleSheet(
+                "font-size: 14px; color: #ff5252; padding: 4px;"
+            )
+        else:
+            self.lbl_ameliorer.setStyleSheet(
+                "font-size: 14px; color: #ffffff; padding: 4px;"
+            )
 
     def maj_comptage(self, running, true_count, cartes_restantes, total_cartes):
         self.lbl_running_count.setText(f"Running Count : {running:+d}")
