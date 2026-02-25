@@ -137,11 +137,17 @@ class ControleurJeu:
         # Comptage
         sabot = self.jeu.sabot
         total = sabot.nb_paquets * 52
+
+        # Calcul de l'avantage
+        tc = sabot.true_count()
+        avantage_joueur = -0.5 + (tc * 0.5)
+
         self.vue.maj_comptage(
             sabot.running_count,
-            sabot.true_count(),
+            tc,
             sabot.cartes_restantes(),
             total,
+            avantage_joueur
         )
 
         # Boutons contextuels

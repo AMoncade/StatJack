@@ -191,6 +191,7 @@ class VueJeu(QWidget):
         self.cercle_principale = CercleMise("Mise")
         self.cercle_21_3 = CercleMise("21+3")
 
+
         for cercle in [self.cercle_pp, self.cercle_principale, self.cercle_21_3]:
             cercle.cercle_clique.connect(self._on_cercle_clique)
             layout_cercles.addWidget(cercle)
@@ -245,6 +246,19 @@ class VueJeu(QWidget):
         )
         layout_sidebar = QVBoxLayout(self.sidebar)
         layout_sidebar.setAlignment(Qt.AlignTop)
+
+        self.lbl_true_count = QLabel("True Count : --")
+        self.lbl_true_count.setStyleSheet(
+            "font-size: 14px; color: #FFD700; padding: 4px;"
+        )
+        layout_sidebar.addWidget(self.lbl_true_count)
+
+        # Label pour l'avantage
+        self.lbl_avantage = QLabel("Avantage : --")
+        self.lbl_avantage.setStyleSheet(
+            "font-size: 14px; color: #AAA; padding: 4px; font-weight: bold;"
+        )
+        layout_sidebar.addWidget(self.lbl_avantage)
 
         lbl_probas = QLabel("Probabilités")
         lbl_probas.setAlignment(Qt.AlignCenter)
@@ -435,12 +449,21 @@ class VueJeu(QWidget):
         else:
             self.lbl_bust.setStyleSheet("font-size: 14px; color: #ffd93d; padding: 4px;")
 
-    def maj_comptage(self, running, true_count, cartes_restantes, total_cartes):
+    def maj_comptage(self, running, true_count, cartes_restantes, total_cartes, avantage):
         self.lbl_running_count.setText(f"Running Count : {running:+d}")
         self.lbl_true_count.setText(f"True Count : {true_count:+.1f}")
         self.lbl_cartes_restantes.setText(
             f"Cartes : {cartes_restantes} / {total_cartes}"
         )
+
+        self.lbl_avantage.setText(f"Avantage : {avantage:+.2f}%")
+
+        # Change la couleur selon si l'avantage
+        if avantage > 0:
+            self.lbl_avantage.setStyleSheet("font-size: 14px; color: #51cf66; padding: 4px; font-weight: bold;")  # Vert
+        else:
+            self.lbl_avantage.setStyleSheet(
+                "font-size: 14px; color: #ff6b6b; padding: 4px; font-weight: bold;")  # Rouge
 
     def activer_split(self, actif):
         self.btn_split.setEnabled(actif)
