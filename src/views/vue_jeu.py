@@ -191,6 +191,7 @@ class VueJeu(QWidget):
         self.cercle_principale = CercleMise("Mise")
         self.cercle_21_3 = CercleMise("21+3")
 
+
         for cercle in [self.cercle_pp, self.cercle_principale, self.cercle_21_3]:
             cercle.cercle_clique.connect(self._on_cercle_clique)
             layout_cercles.addWidget(cercle)
@@ -246,6 +247,19 @@ class VueJeu(QWidget):
         layout_sidebar = QVBoxLayout(self.sidebar)
         layout_sidebar.setAlignment(Qt.AlignTop)
 
+        self.lbl_true_count = QLabel("True Count : --")
+        self.lbl_true_count.setStyleSheet(
+            "font-size: 14px; color: #FFD700; padding: 4px;"
+        )
+        layout_sidebar.addWidget(self.lbl_true_count)
+
+        # Label pour l'avantage
+        self.lbl_avantage = QLabel("Avantage : --")
+        self.lbl_avantage.setStyleSheet(
+            "font-size: 14px; color: #AAA; padding: 4px; font-weight: bold;"
+        )
+        layout_sidebar.addWidget(self.lbl_avantage)
+
         lbl_probas = QLabel("Probabilités")
         lbl_probas.setAlignment(Qt.AlignCenter)
         lbl_probas.setStyleSheet(
@@ -261,10 +275,23 @@ class VueJeu(QWidget):
         self.lbl_ameliorer.setStyleSheet("font-size: 14px; color: #51cf66; padding: 4px;")
         layout_sidebar.addWidget(self.lbl_ameliorer)
 
-        sep = QFrame()
-        sep.setFrameShape(QFrame.HLine)
-        sep.setStyleSheet("color: #444;")
-        layout_sidebar.addWidget(sep)
+        # % de victoire
+        sep_stats = QFrame()
+        sep_stats.setFrameShape(QFrame.HLine)
+        sep_stats.setStyleSheet("color: #444;")
+        layout_sidebar.addWidget(sep_stats)
+
+        self.lbl_win_stand = QLabel("Stand (Gagner) : --")
+        self.lbl_win_stand.setStyleSheet("font-size: 14px; color: #FFF; padding: 4px;")
+        layout_sidebar.addWidget(self.lbl_win_stand)
+
+        self.lbl_win_hit = QLabel("Hit (Gagner) : --")
+        self.lbl_win_hit.setStyleSheet("font-size: 14px; color: #FFF; padding: 4px;")
+        layout_sidebar.addWidget(self.lbl_win_hit)
+
+        self.lbl_win_double = QLabel("Double (Gagner) : --")
+        self.lbl_win_double.setStyleSheet("font-size: 14px; color: #FFF; padding: 4px;")
+        layout_sidebar.addWidget(self.lbl_win_double)
 
         self.lbl_true_count = QLabel("True Count : --")
         self.lbl_true_count.setStyleSheet(
@@ -424,9 +451,10 @@ class VueJeu(QWidget):
         QTimer.singleShot(200, phase2)
         QTimer.singleShot(500, phase3)
 
-    def maj_probabilites(self, pct_bust, edge_pct):
+    def maj_probabilites(self, pct_bust, edge_pct, pct_ameliorer, stats_actions=None):
         # Bust %
         self.lbl_bust.setText(f"Bust : {pct_bust:.1f}%")
+        self.lbl_ameliorer.setText(f"Améliorer (17-21) : {pct_ameliorer:.1f}%")
 
         # Edge EV (différence entre EV optimal et EV stand)
         self.lbl_ameliorer.setText(f"Edge (Hit vs Stand) : {edge_pct:+.1f}%")
@@ -461,12 +489,38 @@ class VueJeu(QWidget):
                 "font-size: 14px; color: #ffffff; padding: 4px;"
             )
 
-    def maj_comptage(self, running, true_count, cartes_restantes, total_cartes):
+        # Affichage des stats Monte Carlo
+        if stats_actions:
+            self.lbl_win_stand.setText(f"Stand (Gagner) : {stats_actions.get('Stand', 0):.1f}%")
+            self.lbl_win_hit.setText(f"Hit (Gagner) : {stats_actions.get('Hit', 0):.1f}%")
+
+            # Griser le Double s'il n'est pas possible
+            if 'Double' in stats_actions:
+                self.lbl_win_double.setText(f"Double (Gagner) : {stats_actions['Double']:.1f}%")
+                self.lbl_win_double.setStyleSheet("font-size: 14px; color: #FFF; padding: 4px;")
+            else:
+                self.lbl_win_double.setText("Double (Gagner) : --")
+                self.lbl_win_double.setStyleSheet("font-size: 14px; color: #555; padding: 4px;")
+        else:
+            self.lbl_win_stand.setText("Stand (Gagner) : --")
+            self.lbl_win_hit.setText("Hit (Gagner) : --")
+            self.lbl_win_double.setText("Double (Gagner) : --")
+
+    def maj_comptage(self, running, true_count, cartes_restantes, total_cartes, avantage):
         self.lbl_running_count.setText(f"Running Count : {running:+d}")
         self.lbl_true_count.setText(f"True Count : {true_count:+.1f}")
         self.lbl_cartes_restantes.setText(
             f"Cartes : {cartes_restantes} / {total_cartes}"
         )
+
+        self.lbl_avantage.setText(f"Avantage : {avantage:+.2f}%")
+
+        # Change la couleur selon si l'avantage
+        if avantage > 0:
+            self.lbl_avantage.setStyleSheet("font-size: 14px; color: #51cf66; padding: 4px; font-weight: bold;")  # Vert
+        else:
+            self.lbl_avantage.setStyleSheet(
+                "font-size: 14px; color: #ff6b6b; padding: 4px; font-weight: bold;")  # Rouge
 
     def activer_split(self, actif):
         self.btn_split.setEnabled(actif)

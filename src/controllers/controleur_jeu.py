@@ -119,14 +119,10 @@ class ControleurJeu:
             self.jeu.mains_joueur, self.jeu.index_main_active
         )
         self.vue.afficher_infos_dealer(self.jeu.dealer, reveler=reveler)
-
-        # IMPORTANT: on continue d'afficher "joueur" comme avant,
-        # mais pour les probas on va utiliser la main active (split-friendly).
         self.vue.afficher_infos_joueur(self.jeu.joueur)
-
         self._rafraichir_argent()
 
-        # Probabilités (nouveau module)
+        # Probabilites
         if not reveler:
             # main active (si split)
             try:
@@ -186,11 +182,17 @@ class ControleurJeu:
         # Comptage
         sabot = self.jeu.sabot
         total = sabot.nb_paquets * 52
+
+        # Calcul de l'avantage
+        tc = sabot.true_count()
+        avantage_joueur = -0.5 + (tc * 0.5)
+
         self.vue.maj_comptage(
             sabot.running_count,
-            sabot.true_count(),
+            tc,
             sabot.cartes_restantes(),
             total,
+            avantage_joueur
         )
 
         # Boutons contextuels
