@@ -157,7 +157,7 @@ class ControleurJeu:
             if dealer_upcard is None:
                 self.vue.maj_probabilites(0, 0, 0)
                 self.vue.lbl_bust.setText("Bust : --")
-                self.vue.lbl_ameliorer.setText("Améliorer (17-21) : --")
+                self.vue.lbl_ameliorer.setText("Améliorer la main : --")
                 self.vue.lbl_reco_ev.setText("Reco / EV : --")
             else:
                 try:
@@ -186,7 +186,10 @@ class ControleurJeu:
                     self.vue.maj_probabilites(pct_bust, edge_pct, pct_ameliorer, stats_action)
 
                     self.vue.lbl_reco_ev.setText(
-                        f"Reco : {reco}\nEV stand : {ev_stand:+.3f}\nEV opt : {ev_opt:+.3f}"
+                        f"Reco : {reco}\n"
+                        f"EV stand : {ev_stand:+.3f}\n"
+                        f"EV opt : {ev_opt:+.3f}\n"
+                        f"Edge décision : {edge_pct:+.1f}%"
                     )
 
                     # Optionnel : si ta vue a un widget pour afficher la distribution de hit
@@ -204,7 +207,7 @@ class ControleurJeu:
         else:
             self.vue.maj_probabilites(0, 0, 0)
             self.vue.lbl_bust.setText("Bust : --")
-            self.vue.lbl_ameliorer.setText("Améliorer (17-21) : --")
+            self.vue.lbl_ameliorer.setText("Améliorer la main : --")
             self.vue.lbl_reco_ev.setText("Reco / EV : --")
 
         # Comptage

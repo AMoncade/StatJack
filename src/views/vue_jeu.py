@@ -271,7 +271,7 @@ class VueJeu(QWidget):
         self.lbl_bust.setStyleSheet("font-size: 14px; color: #ff6b6b; padding: 4px;")
         layout_sidebar.addWidget(self.lbl_bust)
 
-        self.lbl_ameliorer = QLabel("Améliorer (17-21) : --")
+        self.lbl_ameliorer = QLabel("Améliorer la main : --")
         self.lbl_ameliorer.setStyleSheet("font-size: 14px; color: #51cf66; padding: 4px;")
         layout_sidebar.addWidget(self.lbl_ameliorer)
 
@@ -452,11 +452,8 @@ class VueJeu(QWidget):
     def maj_probabilites(self, pct_bust, edge_pct, pct_ameliorer=0.0, stats_actions=None):
         # Bust %
         self.lbl_bust.setText(f"Bust : {pct_bust:.1f}%")
-        self.lbl_ameliorer.setText(f"Améliorer (17-21) : {pct_ameliorer:.1f}%")
-
-        # Edge EV (différence entre EV optimal et EV stand)
-        # Note: Est écraser dans rafraichir de controleur_jeu à corriger
-        # self.lbl_ameliorer.setText(f"Edge (Hit vs Stand) : {edge_pct:+.1f}%")
+        # Amiliorer la main si hit
+        self.lbl_ameliorer.setText(f"Améliorer la main : {pct_ameliorer:.1f}%")
 
         # ---- Couleur Bust ----
         if pct_bust > 50:
@@ -472,21 +469,33 @@ class VueJeu(QWidget):
                 "font-size: 14px; color: #ffd93d; padding: 4px;"
             )
 
-        # ---- Couleur Edge EV ----
-        if edge_pct > 0:
-            # Avantage à hit
+        # ----- Couleur Amélioration -----
+        if pct_ameliorer >= 50:
             self.lbl_ameliorer.setStyleSheet(
                 "font-size: 14px; color: #00c853; padding: 4px;"
             )
-        elif edge_pct < 0:
-            # Avantage à stand
+        elif pct_ameliorer >= 25:
             self.lbl_ameliorer.setStyleSheet(
-                "font-size: 14px; color: #ff5252; padding: 4px;"
+                "font-size: 14px; color: #51cf66; padding: 4px;"
             )
         else:
             self.lbl_ameliorer.setStyleSheet(
                 "font-size: 14px; color: #ffffff; padding: 4px;"
             )
+
+            # ----- Couleur Reco / EV -----
+            if edge_pct > 0:
+                self.lbl_reco_ev.setStyleSheet(
+                    "font-size: 14px; color: #00c853; padding: 4px;"
+                )
+            elif edge_pct < 0:
+                self.lbl_reco_ev.setStyleSheet(
+                    "font-size: 14px; color: #ff5252; padding: 4px;"
+                )
+            else:
+                self.lbl_reco_ev.setStyleSheet(
+                    "font-size: 14px; color: #ffffff; padding: 4px;"
+                )
 
         # Affichage des stats Monte Carlo
         if stats_actions:
@@ -504,6 +513,7 @@ class VueJeu(QWidget):
             self.lbl_win_stand.setText("Stand (Gagner) : --")
             self.lbl_win_hit.setText("Hit (Gagner) : --")
             self.lbl_win_double.setText("Double (Gagner) : --")
+            self.lbl_win_double.setStyleSheet("font-size: 14px; color: #555; padding: 4px;")
 
     def maj_comptage(self, running, true_count, cartes_restantes, total_cartes, avantage):
         self.lbl_running_count.setText(f"Running Count : {running:+d}")

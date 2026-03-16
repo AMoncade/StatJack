@@ -4,8 +4,6 @@ import random
 import copy
 
 
-
-
 class CalculateurProbabilites:
 
     @staticmethod
@@ -30,7 +28,8 @@ class CalculateurProbabilites:
 
     @staticmethod
     def _etat_main(main_joueur):
-        # Retourne (total, soft_aces) pour la main actuelle. soft_aces = nb d'As encore comptés comme 11 après ajustement.
+        # Retourne (total, soft_aces) pour la main actuelle.
+        # soft_aces = nb d'As encore comptés comme 11 après ajustement.
         total = 0
         soft_aces = 0
         for c in main_joueur.cartes:
@@ -141,7 +140,7 @@ class CalculateurProbabilites:
         return ev
 
     @staticmethod
-    def ev_hit_recursive(total,soft_aces, dealer_dist, dist_valeurs, memo=None):
+    def ev_hit_recursive(total, soft_aces, dealer_dist, dist_valeurs, memo=None):
         # Calcul EV optimal pour hit
         if memo is None:
             memo = {}
@@ -267,16 +266,8 @@ class CalculateurProbabilites:
         return gains_cumules
 
     @staticmethod
-    def simuler_monte_carlo(main_joueur, dealer, sabot, nb_simulations=500):
+    def simuler_monte_carlo(main_joueur, dealer, sabot, nb_simulations=1000):
         if not dealer.cartes or not main_joueur.cartes:
-            return {}
-
-        carte_visible_dealer = dealer.cartes[0].valeur_blackjack()
-        valeur_initiale_joueur = main_joueur.valeur_totale()
-
-        # Liste des valeurs de cartes restantes pour tirer rapidement au hasard
-        valeurs_dispo = [c.valeur_blackjack() for c in sabot.cartes]
-        if not valeurs_dispo:
             return {}
 
         stats = {}
@@ -288,46 +279,53 @@ class CalculateurProbabilites:
             victoires = 0
 
             for _ in range(nb_simulations):
-                total_joueur = valeur_initiale_joueur
-                as_joueur = sum(1 for c in main_joueur.cartes if c.rang == "A")
+                # Cloner l'état du sabot pour simuler une manche réaliste
+                s = sabot.clone()
+                s.melanger_sans_reset()
+
+                # Retirer les cartes déjà connues pour éviter de les repiger
+                if hasattr(s, "retirer_cartes"):
+                    s.retirer_cartes(main_joueur.cartes)
+                if hasattr(s, "retirer_carte") and dealer.cartes:
+                    s.retirer_carte(dealer.cartes[0])
+                # Recréer la main du joueur à partir de la vraie main actuelle
+                sim_joueur = MainJoueur()
+                for carte in main_joueur.cartes:
+                    sim_joueur.ajouter_carte(carte)
 
                 # Le joueur joue son action virtuelle
                 if action == "Hit" or action == "Double":
-                    carte_tiree = random.choice(valeurs_dispo)
-                    if carte_tiree == 11: as_joueur += 1
-                    total_joueur += carte_tiree
+                    carte_tiree = s.tirer()
+                    if carte_tiree is not None:
+                        sim_joueur.ajouter_carte(carte_tiree)
 
-                    # Ajustement des As si on dépasse 21
-                    while total_joueur > 21 and as_joueur > 0:
-                        total_joueur -= 10
-                        as_joueur -= 1
-
-                if total_joueur > 21:
+                if sim_joueur.est_busted():
                     continue  # Défaite automatique (Bust)
 
+                # Le dealer joue avec sa vraie carte visible + une carte cachée aléatoire
+                sim_dealer = MainJoueur()
+                sim_dealer.ajouter_carte(dealer.cartes[0])
+
+                carte_cachee = s.tirer()
+                if carte_cachee is None:
+                    continue
+                sim_dealer.ajouter_carte(carte_cachee)
+
                 # Le dealer joue (règle: s'arrête à 17)
-                total_dealer = carte_visible_dealer
-                as_dealer = 1 if carte_visible_dealer == 11 else 0
-                # On assume que la carte cachée est tirée aléatoirement
-
-                while total_dealer < 17:
-                    carte_dealer = random.choice(valeurs_dispo)
-                    if carte_dealer == 11: as_dealer += 1
-                    total_dealer += carte_dealer
-
-                    while total_dealer > 21 and as_dealer > 0:
-                        total_dealer -= 10
-                        as_dealer -= 1
+                while sim_dealer.valeur_totale() < 17:
+                    carte_dealer = s.tirer()
+                    if carte_dealer is None:
+                        break
+                    sim_dealer.ajouter_carte(carte_dealer)
 
                 # Qui gagne ?
+                total_joueur = sim_joueur.valeur_totale()
+                total_dealer = sim_dealer.valeur_totale()
+
                 if total_dealer > 21 or total_joueur > total_dealer:
                     victoires += 1
-                elif total_joueur == total_dealer and action == "Double":
-                    # Au double, une égalité rembourse, ce n'est pas une vraie "victoire" complète,
-                    # mais on peut compter 0.5 victoire pour la statistique.
-                    victoires += 0.5
 
-                    # Calcul du pourcentage
+            # Calcul du pourcentage de victoire
             stats[action] = (victoires / nb_simulations) * 100
 
         return stats
