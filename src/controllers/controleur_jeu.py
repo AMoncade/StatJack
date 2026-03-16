@@ -101,6 +101,7 @@ class ControleurJeu:
 
     def _finir_manche(self):
         resultats = self.jeu.calculer_resultats()
+        self.vue.label_resultat.setText(" | ".join(resultats))
         self.vue.set_phase(PHASE_RESULTAT)
         self._rafraichir(reveler=True)
 
@@ -171,7 +172,6 @@ class ControleurJeu:
                     pct_bust = spot.get("p_bust_si_hit", 0.0) * 100.0
                     pct_ameliorer = spot.get("p_ameliorer_si_hit", 0.0) * 100.0
                     ev_stand = spot.get("ev_stand", 0.0)
-                    # NOTE: dans ton module actuel, "ev_hit_1x" = EV optimal (hit récursif vs stand)
                     ev_opt = spot.get("ev_optimal", 0.0)
                     reco = spot.get("recommandation", "--")
                     edge_pct = (ev_opt - ev_stand) * 100.0
@@ -203,6 +203,7 @@ class ControleurJeu:
                     print("Erreur probabilités :", e)
                     self.vue.maj_probabilites(0, 0, 0)
                     self.vue.lbl_bust.setText("Bust : --")
+                    self.vue.lbl_ameliorer.setText("Améliorer la main : --")
                     self.vue.lbl_reco_ev.setText("Reco / EV : --")
         else:
             self.vue.maj_probabilites(0, 0, 0)

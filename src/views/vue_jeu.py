@@ -452,7 +452,7 @@ class VueJeu(QWidget):
     def maj_probabilites(self, pct_bust, edge_pct, pct_ameliorer=0.0, stats_actions=None):
         # Bust %
         self.lbl_bust.setText(f"Bust : {pct_bust:.1f}%")
-        # Amiliorer la main si hit
+        # Améliorer la main si hit
         self.lbl_ameliorer.setText(f"Améliorer la main : {pct_ameliorer:.1f}%")
 
         # ---- Couleur Bust ----
@@ -483,19 +483,19 @@ class VueJeu(QWidget):
                 "font-size: 14px; color: #ffffff; padding: 4px;"
             )
 
-            # ----- Couleur Reco / EV -----
-            if edge_pct > 0:
-                self.lbl_reco_ev.setStyleSheet(
-                    "font-size: 14px; color: #00c853; padding: 4px;"
-                )
-            elif edge_pct < 0:
-                self.lbl_reco_ev.setStyleSheet(
-                    "font-size: 14px; color: #ff5252; padding: 4px;"
-                )
-            else:
-                self.lbl_reco_ev.setStyleSheet(
-                    "font-size: 14px; color: #ffffff; padding: 4px;"
-                )
+        # ----- Couleur Reco / EV -----
+        if edge_pct > 0:
+            self.lbl_reco_ev.setStyleSheet(
+                "font-size: 14px; color: #00c853; padding: 4px;"
+            )
+        elif edge_pct < 0:
+            self.lbl_reco_ev.setStyleSheet(
+                "font-size: 14px; color: #ff5252; padding: 4px;"
+            )
+        else:
+            self.lbl_reco_ev.setStyleSheet(
+                "font-size: 14px; color: #ffffff; padding: 4px;"
+            )
 
         # Affichage des stats Monte Carlo
         if stats_actions:
