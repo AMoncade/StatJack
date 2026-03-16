@@ -47,7 +47,9 @@ class ControleurJeu:
             return
         self.audio.jouer_son_carte()
 
-        if self.jeu.joueur.est_busted():
+        total = self.jeu.joueur.valeur_totale()
+
+        if total >= 21:
             if not self.jeu.passer_main_suivante():
                 self._finir_manche()
             else:
@@ -153,9 +155,10 @@ class ControleurJeu:
             dealer_upcard = self.jeu.dealer.cartes[0] if self.jeu.dealer.cartes else None
 
             if dealer_upcard is None:
-                self.vue.maj_probabilites(0, 0)
+                self.vue.maj_probabilites(0, 0, 0)
                 self.vue.lbl_bust.setText("Bust : --")
-                self.vue.lbl_ameliorer.setText("Recommendation / EV : --")
+                self.vue.lbl_ameliorer.setText("Améliorer (17-21) : --")
+                self.vue.lbl_reco_ev.setText("Reco / EV : --")
             else:
                 try:
                     spot = CalculateurProbabilites.resume_spot(
@@ -166,18 +169,24 @@ class ControleurJeu:
                     )
 
                     pct_bust = spot.get("p_bust_si_hit", 0.0) * 100.0
+                    pct_ameliorer = spot.get("p_ameliorer_si_hit", 0.0) * 100.0
                     ev_stand = spot.get("ev_stand", 0.0)
                     # NOTE: dans ton module actuel, "ev_hit_1x" = EV optimal (hit récursif vs stand)
                     ev_opt = spot.get("ev_optimal", 0.0)
                     reco = spot.get("recommandation", "--")
                     edge_pct = (ev_opt - ev_stand) * 100.0
-                    stats_action = spot.get("stats_action", None)
+                    stats_action = CalculateurProbabilites.simuler_monte_carlo(
+                        main_joueur=main_active,
+                        dealer=self.jeu.dealer,
+                        sabot=self.jeu.sabot,
+                        nb_simulations=500
+                    )
 
                     # On conserve la signature existante (2 nombres)
-                    self.vue.maj_probabilites(pct_bust, edge_pct, 0.0, stats_action)
+                    self.vue.maj_probabilites(pct_bust, edge_pct, pct_ameliorer, stats_action)
 
-                    self.vue.lbl_ameliorer.setText(
-                        f"Reco : {reco} | EV stand : {ev_stand:+.3f} | EV opt : {ev_opt:+.3f}"
+                    self.vue.lbl_reco_ev.setText(
+                        f"Reco : {reco}\nEV stand : {ev_stand:+.3f}\nEV opt : {ev_opt:+.3f}"
                     )
 
                     # Optionnel : si ta vue a un widget pour afficher la distribution de hit
@@ -191,11 +200,12 @@ class ControleurJeu:
                     print("Erreur probabilités :", e)
                     self.vue.maj_probabilites(0, 0, 0)
                     self.vue.lbl_bust.setText("Bust : --")
-                    self.vue.lbl_ameliorer.setText("Reco / EV : --")
+                    self.vue.lbl_reco_ev.setText("Reco / EV : --")
         else:
             self.vue.maj_probabilites(0, 0, 0)
             self.vue.lbl_bust.setText("Bust : --")
-            self.vue.lbl_ameliorer.setText("Reco / EV : --")
+            self.vue.lbl_ameliorer.setText("Améliorer (17-21) : --")
+            self.vue.lbl_reco_ev.setText("Reco / EV : --")
 
         # Comptage
         sabot = self.jeu.sabot
@@ -215,12 +225,13 @@ class ControleurJeu:
 
         # Activation / désactivation des boutons selon l'état du jeu
         if not reveler and self.jeu.manche_en_cours:
-            busted = self.jeu.joueur.est_busted()
+            total = self.jeu.joueur.valeur_totale()
+            peut_jouer = total < 21 and not self.jeu.joueur.est_busted()
 
-            self.vue.btn_hit.setEnabled(not busted)
-            self.vue.btn_stand.setEnabled(not busted)
-            self.vue.activer_double(not busted and self.jeu.joueur.peut_double())
-            self.vue.activer_split(not busted and self.jeu.joueur.peut_split())
+            self.vue.btn_hit.setEnabled(peut_jouer)
+            self.vue.btn_stand.setEnabled(peut_jouer)
+            self.vue.activer_double(peut_jouer and self.jeu.joueur.peut_double())
+            self.vue.activer_split(peut_jouer and self.jeu.joueur.peut_split())
         else:
             self.vue.btn_hit.setEnabled(False)
             self.vue.btn_stand.setEnabled(False)

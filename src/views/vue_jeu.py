@@ -275,6 +275,10 @@ class VueJeu(QWidget):
         self.lbl_ameliorer.setStyleSheet("font-size: 14px; color: #51cf66; padding: 4px;")
         layout_sidebar.addWidget(self.lbl_ameliorer)
 
+        self.lbl_reco_ev = QLabel("Reco / EV : --")
+        self.lbl_reco_ev.setStyleSheet("font-size: 14px; color: #ffffff; padding: 4px;")
+        layout_sidebar.addWidget(self.lbl_reco_ev)
+
         # % de victoire
         sep_stats = QFrame()
         sep_stats.setFrameShape(QFrame.Shape.HLine)
@@ -448,8 +452,7 @@ class VueJeu(QWidget):
     def maj_probabilites(self, pct_bust, edge_pct, pct_ameliorer=0.0, stats_actions=None):
         # Bust %
         self.lbl_bust.setText(f"Bust : {pct_bust:.1f}%")
-        # Note: lbl edge ecrase celui ci car dans le même libéler donc a corriger et à mettre ailleurs
-        # self.lbl_ameliorer.setText(f"Améliorer (17-21) : {pct_ameliorer:.1f}%")
+        self.lbl_ameliorer.setText(f"Améliorer (17-21) : {pct_ameliorer:.1f}%")
 
         # Edge EV (différence entre EV optimal et EV stand)
         # Note: Est écraser dans rafraichir de controleur_jeu à corriger

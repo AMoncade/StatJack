@@ -196,6 +196,12 @@ class CalculateurProbabilites:
         dist_hit = CalculateurProbabilites.distribution_nouveau_total_si_hit(main_joueur, sabot_cond)
         p_bust = dist_hit.get("bust", 0.0)
 
+        t = main_joueur.valeur_totale()
+        p_ameliorer = 0.0
+        for total_final, prob in dist_hit.items():
+            if total_final != "bust" and t < total_final <= 21:
+                p_ameliorer += prob
+
         dealer_dist = CalculateurProbabilites.dealer_distribution(sabot_cond, dealer_upcard, nb_simulations_dealer)
 
         t = main_joueur.valeur_totale()
@@ -208,6 +214,7 @@ class CalculateurProbabilites:
             "total_joueur": t,
             "distribution_total_si_hit": dist_hit,
             "p_bust_si_hit": p_bust,
+            "p_ameliorer_si_hit": p_ameliorer,
             "dealer_distribution": dealer_dist,
             "ev_stand": ev_stand,
             "ev_optimal": ev_opt,
