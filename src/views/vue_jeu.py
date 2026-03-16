@@ -71,19 +71,19 @@ class VueJeu(QWidget):
 
         # Zone cartes dealer
         self.label_dealer = QLabel("Dealer")
-        self.label_dealer.setAlignment(Qt.AlignCenter)
+        self.label_dealer.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.label_dealer.setStyleSheet(
             "font-size: 18px; color: white; font-weight: bold;"
         )
         layout_table.addWidget(self.label_dealer)
 
         self.layout_cartes_dealer = QHBoxLayout()
-        self.layout_cartes_dealer.setAlignment(Qt.AlignCenter)
+        self.layout_cartes_dealer.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout_table.addLayout(self.layout_cartes_dealer)
 
         # Résultat (avec animation)
         self.label_resultat = QLabel("")
-        self.label_resultat.setAlignment(Qt.AlignCenter)
+        self.label_resultat.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.label_resultat.setStyleSheet(
             "font-size: 26px; color: #FFD700; font-weight: bold; margin: 5px;"
         )
@@ -91,26 +91,26 @@ class VueJeu(QWidget):
 
         # Zone cartes joueur
         self.label_joueur = QLabel("Vous")
-        self.label_joueur.setAlignment(Qt.AlignCenter)
+        self.label_joueur.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.label_joueur.setStyleSheet(
             "font-size: 18px; color: white; font-weight: bold;"
         )
         layout_table.addWidget(self.label_joueur)
 
         self.layout_cartes_joueur = QHBoxLayout()
-        self.layout_cartes_joueur.setAlignment(Qt.AlignCenter)
+        self.layout_cartes_joueur.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout_table.addLayout(self.layout_cartes_joueur)
 
         # Indicateur main active
         self.label_main_active = QLabel("")
-        self.label_main_active.setAlignment(Qt.AlignCenter)
+        self.label_main_active.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.label_main_active.setStyleSheet("font-size: 14px; color: #FFD700;")
         layout_table.addWidget(self.label_main_active)
 
         # Boutons actions (JEU)
         self.widget_actions = QWidget()
         layout_actions = QHBoxLayout(self.widget_actions)
-        layout_actions.setAlignment(Qt.AlignCenter)
+        layout_actions.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         style_btn_action = """
             QPushButton {{
@@ -148,7 +148,7 @@ class VueJeu(QWidget):
         # Boutons post-manche (RESULTAT)
         self.widget_post = QWidget()
         layout_post = QHBoxLayout(self.widget_post)
-        layout_post.setAlignment(Qt.AlignCenter)
+        layout_post.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         style_btn_post = """
             QPushButton {
@@ -175,16 +175,16 @@ class VueJeu(QWidget):
         # Zone mises (MISE)
         self.widget_mises = QWidget()
         layout_mises = QVBoxLayout(self.widget_mises)
-        layout_mises.setAlignment(Qt.AlignCenter)
+        layout_mises.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         lbl_mises = QLabel("Placez vos mises")
-        lbl_mises.setAlignment(Qt.AlignCenter)
+        lbl_mises.setAlignment(Qt.AlignmentFlag.AlignCenter)
         lbl_mises.setStyleSheet("font-size: 18px; color: white; font-weight: bold;")
         layout_mises.addWidget(lbl_mises)
 
         # 3 cercles
         layout_cercles = QHBoxLayout()
-        layout_cercles.setAlignment(Qt.AlignCenter)
+        layout_cercles.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout_cercles.setSpacing(20)
 
         self.cercle_pp = CercleMise("PP")
@@ -200,7 +200,7 @@ class VueJeu(QWidget):
 
         # 4 jetons
         layout_jetons = QHBoxLayout()
-        layout_jetons.setAlignment(Qt.AlignCenter)
+        layout_jetons.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout_jetons.setSpacing(10)
 
         for val in [100, 200, 500, 1000]:
@@ -212,7 +212,7 @@ class VueJeu(QWidget):
 
         # Boutons dealer/reset
         layout_mise_btns = QHBoxLayout()
-        layout_mise_btns.setAlignment(Qt.AlignCenter)
+        layout_mise_btns.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         style_mise_btn = """
             QPushButton {
@@ -245,7 +245,7 @@ class VueJeu(QWidget):
             "background-color: #1a1a2e; border-left: 2px solid #333;"
         )
         layout_sidebar = QVBoxLayout(self.sidebar)
-        layout_sidebar.setAlignment(Qt.AlignTop)
+        layout_sidebar.setAlignment(Qt.AlignmentFlag.AlignTop)
 
         self.lbl_true_count = QLabel("True Count : --")
         self.lbl_true_count.setStyleSheet(
@@ -261,7 +261,7 @@ class VueJeu(QWidget):
         layout_sidebar.addWidget(self.lbl_avantage)
 
         lbl_probas = QLabel("Probabilités")
-        lbl_probas.setAlignment(Qt.AlignCenter)
+        lbl_probas.setAlignment(Qt.AlignmentFlag.AlignCenter)
         lbl_probas.setStyleSheet(
             "font-size: 16px; font-weight: bold; color: white; padding: 8px;"
         )
@@ -277,7 +277,7 @@ class VueJeu(QWidget):
 
         # % de victoire
         sep_stats = QFrame()
-        sep_stats.setFrameShape(QFrame.HLine)
+        sep_stats.setFrameShape(QFrame.Shape.HLine)
         sep_stats.setStyleSheet("color: #444;")
         layout_sidebar.addWidget(sep_stats)
 
@@ -293,12 +293,6 @@ class VueJeu(QWidget):
         self.lbl_win_double.setStyleSheet("font-size: 14px; color: #FFF; padding: 4px;")
         layout_sidebar.addWidget(self.lbl_win_double)
 
-        self.lbl_true_count = QLabel("True Count : --")
-        self.lbl_true_count.setStyleSheet(
-            "font-size: 14px; color: #FFD700; padding: 4px;"
-        )
-        layout_sidebar.addWidget(self.lbl_true_count)
-
         self.lbl_running_count = QLabel("Running Count : --")
         self.lbl_running_count.setStyleSheet(
             "font-size: 14px; color: #AAA; padding: 4px;"
@@ -306,7 +300,7 @@ class VueJeu(QWidget):
         layout_sidebar.addWidget(self.lbl_running_count)
 
         sep2 = QFrame()
-        sep2.setFrameShape(QFrame.HLine)
+        sep2.setFrameShape(QFrame.Shape.HLine)
         sep2.setStyleSheet("color: #444;")
         layout_sidebar.addWidget(sep2)
 
@@ -451,13 +445,15 @@ class VueJeu(QWidget):
         QTimer.singleShot(200, phase2)
         QTimer.singleShot(500, phase3)
 
-    def maj_probabilites(self, pct_bust, edge_pct, pct_ameliorer, stats_actions=None):
+    def maj_probabilites(self, pct_bust, edge_pct, pct_ameliorer=0.0, stats_actions=None):
         # Bust %
         self.lbl_bust.setText(f"Bust : {pct_bust:.1f}%")
-        self.lbl_ameliorer.setText(f"Améliorer (17-21) : {pct_ameliorer:.1f}%")
+        # Note: lbl edge ecrase celui ci car dans le même libéler donc a corriger et à mettre ailleurs
+        # self.lbl_ameliorer.setText(f"Améliorer (17-21) : {pct_ameliorer:.1f}%")
 
         # Edge EV (différence entre EV optimal et EV stand)
-        self.lbl_ameliorer.setText(f"Edge (Hit vs Stand) : {edge_pct:+.1f}%")
+        # Note: Est écraser dans rafraichir de controleur_jeu à corriger
+        # self.lbl_ameliorer.setText(f"Edge (Hit vs Stand) : {edge_pct:+.1f}%")
 
         # ---- Couleur Bust ----
         if pct_bust > 50:
