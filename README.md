@@ -38,7 +38,7 @@ Ce projet valide les axes de formation suivants :
 * **Adrien Moncade** - (Rôle principal, xxx)
 * **Edouard Gagne** - (Rôle principal, xxx)
 * **Felix Deharnais** - (Rôle principal, xxx)
-* **Luk...** - (Rôle principal, xxx)
+* **Luka Therrien** - (Rôle principal, xxx)
 
 ---
 *Développé dans le cadre du cours "Projet d'intégration" au Cégep.*
