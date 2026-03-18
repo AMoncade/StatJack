@@ -38,29 +38,47 @@ class ControleurJeu:
             self._finir_manche()
 
     def action_hit(self):
-        self.jeu.joueur_tire()
-        self.audio.jouer_son_carte()
-        self._rafraichir(reveler=False)
+        if not self.jeu.manche_en_cours:
+            return
         if self.jeu.joueur.est_busted():
+            return
+        carte = self.jeu.joueur_tire()
+        if carte is None:
+            return
+        self.audio.jouer_son_carte()
+
+        total = self.jeu.joueur.valeur_totale()
+
+        if total >= 21:
             if not self.jeu.passer_main_suivante():
                 self._finir_manche()
             else:
                 self._rafraichir(reveler=False)
+        else:
+            self._rafraichir(reveler=False)
 
     def action_stand(self):
+        if not self.jeu.manche_en_cours:
+            return
+        if self.jeu.joueur.est_busted():
+            return
         if not self.jeu.passer_main_suivante():
             self._finir_manche()
         else:
             self._rafraichir(reveler=False)
 
     def action_double(self):
+        if not self.jeu.manche_en_cours:
+            return
+        if self.jeu.joueur.est_busted():
+            return
         if not self.jeu.joueur.peut_double():
             return
         carte = self.jeu.joueur_double()
         if carte is None:
             return
         self.audio.jouer_son_carte()
-        self._rafraichir(reveler=False)
+
         if self.jeu.joueur.est_busted():
             if not self.jeu.passer_main_suivante():
                 self._finir_manche()
@@ -70,6 +88,10 @@ class ControleurJeu:
             self.action_stand()
 
     def action_split(self):
+        if not self.jeu.manche_en_cours:
+            return
+        if self.jeu.joueur.est_busted():
+            return
         if not self.jeu.joueur.peut_split():
             return
         if not self.jeu.joueur_split():
@@ -79,6 +101,7 @@ class ControleurJeu:
 
     def _finir_manche(self):
         resultats = self.jeu.calculer_resultats()
+        self.vue.label_resultat.setText(" | ".join(resultats))
         self.vue.set_phase(PHASE_RESULTAT)
         self._rafraichir(reveler=True)
 
@@ -133,9 +156,10 @@ class ControleurJeu:
             dealer_upcard = self.jeu.dealer.cartes[0] if self.jeu.dealer.cartes else None
 
             if dealer_upcard is None:
-                self.vue.maj_probabilites(0, 0)
+                self.vue.maj_probabilites(0, 0, 0)
                 self.vue.lbl_bust.setText("Bust : --")
-                self.vue.lbl_ameliorer.setText("Recommendation / EV : --")
+                self.vue.lbl_ameliorer.setText("Améliorer la main : --")
+                self.vue.lbl_reco_ev.setText("Reco / EV : --")
             else:
                 try:
                     spot = CalculateurProbabilites.resume_spot(
@@ -146,21 +170,26 @@ class ControleurJeu:
                     )
 
                     pct_bust = spot.get("p_bust_si_hit", 0.0) * 100.0
-
-                    reco = spot.get("recommandation", "--")
+                    pct_ameliorer = spot.get("p_ameliorer_si_hit", 0.0) * 100.0
                     ev_stand = spot.get("ev_stand", 0.0)
-
-                    # NOTE: dans ton module actuel, "ev_hit_1x" = EV optimal (hit récursif vs stand)
-                    ev_opt = spot.get("ev_hit_1x", 0.0)
-
+                    ev_opt = spot.get("ev_optimal", 0.0)
+                    reco = spot.get("recommandation", "--")
                     edge_pct = (ev_opt - ev_stand) * 100.0
+                    stats_action = CalculateurProbabilites.simuler_monte_carlo(
+                        main_joueur=main_active,
+                        dealer=self.jeu.dealer,
+                        sabot=self.jeu.sabot,
+                        nb_simulations=500
+                    )
 
                     # On conserve la signature existante (2 nombres)
-                    self.vue.maj_probabilites(pct_bust, edge_pct)
+                    self.vue.maj_probabilites(pct_bust, edge_pct, pct_ameliorer, stats_action)
 
-                    self.vue.lbl_bust.setText(f"Bust : {pct_bust:.1f}%")
-                    self.vue.lbl_ameliorer.setText(
-                        f"Reco : {reco} | EV stand : {ev_stand:+.3f} | EV opt : {ev_opt:+.3f}"
+                    self.vue.lbl_reco_ev.setText(
+                        f"Reco : {reco}\n"
+                        f"EV stand : {ev_stand:+.3f}\n"
+                        f"EV opt : {ev_opt:+.3f}\n"
+                        f"Edge décision : {edge_pct:+.1f}%"
                     )
 
                     # Optionnel : si ta vue a un widget pour afficher la distribution de hit
@@ -169,15 +198,18 @@ class ControleurJeu:
                             spot.get("distribution_total_si_hit", {})
                         )
 
-                except Exception:
+                except Exception as e:
                     # Si clone/retirer_* ou autre n'est pas dispo, on ne casse pas l'UI
-                    self.vue.maj_probabilites(0, 0)
+                    print("Erreur probabilités :", e)
+                    self.vue.maj_probabilites(0, 0, 0)
                     self.vue.lbl_bust.setText("Bust : --")
-                    self.vue.lbl_ameliorer.setText("Reco / EV : --")
+                    self.vue.lbl_ameliorer.setText("Améliorer la main : --")
+                    self.vue.lbl_reco_ev.setText("Reco / EV : --")
         else:
-            self.vue.maj_probabilites(0, 0)
+            self.vue.maj_probabilites(0, 0, 0)
             self.vue.lbl_bust.setText("Bust : --")
-            self.vue.lbl_ameliorer.setText("Reco / EV : --")
+            self.vue.lbl_ameliorer.setText("Améliorer la main : --")
+            self.vue.lbl_reco_ev.setText("Reco / EV : --")
 
         # Comptage
         sabot = self.jeu.sabot
@@ -195,10 +227,20 @@ class ControleurJeu:
             avantage_joueur
         )
 
-        # Boutons contextuels
-        if not reveler:
-            self.vue.activer_split(self.jeu.joueur.peut_split())
-            self.vue.activer_double(self.jeu.joueur.peut_double())
+        # Activation / désactivation des boutons selon l'état du jeu
+        if not reveler and self.jeu.manche_en_cours:
+            total = self.jeu.joueur.valeur_totale()
+            peut_jouer = total < 21 and not self.jeu.joueur.est_busted()
+
+            self.vue.btn_hit.setEnabled(peut_jouer)
+            self.vue.btn_stand.setEnabled(peut_jouer)
+            self.vue.activer_double(peut_jouer and self.jeu.joueur.peut_double())
+            self.vue.activer_split(peut_jouer and self.jeu.joueur.peut_split())
+        else:
+            self.vue.btn_hit.setEnabled(False)
+            self.vue.btn_stand.setEnabled(False)
+            self.vue.activer_double(False)
+            self.vue.activer_split(False)
 
     def _rafraichir_argent(self):
         if self.jeu.banque:

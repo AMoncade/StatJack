@@ -1,11 +1,11 @@
 from src.models.carte import Carte
 
-#Donner une main aleatoirement au joueur (s'assurrer que A = 11 puisse devenir A = 1 (regle bj))
+# Donner une main aleatoirement au joueur (s'assurrer que A = 11 puisse devenir A = 1 (regle bj))
 
-from src.models.carte import Carte
+
 
 class MainJoueur:
-    #Représente les cartes tenues par un joueur (ou le dealer)
+    # Représente les cartes tenues par un joueur (ou le dealer)
 
     def __init__(self):
         self.cartes = []
@@ -13,7 +13,7 @@ class MainJoueur:
         self.est_double = False
 
     def ajouter_carte(self, carte):
-        #Ajoute une carte à la main
+        # Ajoute une carte à la main
         self.cartes.append(carte)
 
     def retirer_carte(self):
@@ -22,7 +22,7 @@ class MainJoueur:
         return None
 
     def valeur_totale(self):
-        #Gerer As = 1 ou 11
+        # Gerer As = 1 ou 11
         valeur = 0
         nb_as = 0
 
@@ -49,15 +49,15 @@ class MainJoueur:
         return self.valeur_totale() > 21
 
     def peut_split(self):
-        #2 fois la meme carte pour split
+        # 2 fois la meme carte pour split
         return (len(self.cartes) == 2
                 and self.cartes[0].valeur_blackjack() == self.cartes[1].valeur_blackjack())
 
     def peut_double(self):
-        #maximum 2 cartes pour doubler
+        # Maximum 2 cartes pour doubler
         return len(self.cartes) == 2
 
     def __str__(self):
-     # Afficher main
+        # Afficher main
         liste_cartes = " ".join(str(c) for c in self.cartes)
         return f"{liste_cartes} (Total: {self.valeur_totale()})"
