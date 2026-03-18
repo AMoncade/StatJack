@@ -90,15 +90,25 @@ def main():
         ctrl_tuto.demarrer()
         fenetre.aller_a(PAGE_TUTORIEL)
 
+    page_precedente = PAGE_MENU
+
+    def aller_parametres():
+        nonlocal page_precedente
+        page_precedente = fenetre.stack.currentIndex()
+        fenetre.aller_a(PAGE_PARAMETRES)
+
+    def retour_depuis_parametres():
+        fenetre.aller_a(page_precedente)
+
     menu.jouer_clique.connect(aller_jouer)
     menu.tutoriel_clique.connect(aller_tuto)
-    menu.parametres_clique.connect(lambda: fenetre.aller_a(PAGE_PARAMETRES))
+    menu.parametres_clique.connect(aller_parametres)
     menu.quitter_clique.connect(app.quit)
 
     # Navigation retour
     vue_jeu.retour_menu_clique.connect(aller_menu)
-    vue_jeu.parametres_clique.connect(lambda: fenetre.aller_a(PAGE_PARAMETRES))
-    vue_params.retour_clique.connect(aller_menu)
+    vue_jeu.parametres_clique.connect(aller_parametres)
+    vue_params.retour_clique.connect(retour_depuis_parametres)
     vue_tuto.quitter_clique.connect(aller_menu)
 
     # Demarrage

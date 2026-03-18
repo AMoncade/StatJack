@@ -1,5 +1,8 @@
-from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel,
-                               QPushButton, QFrame, QGraphicsOpacityEffect)
+from PySide6.QtWidgets import (
+    QWidget, QVBoxLayout, QHBoxLayout, QLabel,
+    QPushButton, QFrame, QGraphicsOpacityEffect,
+    QToolButton, QDialog, QTextEdit
+)
 from PySide6.QtCore import Signal, Qt, QPropertyAnimation, QEasingCurve, QTimer
 from PySide6.QtGui import QColor
 
@@ -30,6 +33,70 @@ class VueJeu(QWidget):
         self.phase = PHASE_MISE
         self.cercle_actif = "Mise"
         self._animations_en_cours = []
+        self.aides_stats = {
+            "true_count": (
+                "True Count",
+                "Le true count est le running count ajusté selon le nombre de paquets "
+                "restants dans le sabot.\n\n"
+                "Il donne une meilleure idée de si le sabot actuel avantage le joueur "
+                "ou le dealer.\n\n"
+                "En général :\n"
+                "• plus il est positif, plus le sabot peut être favorable au joueur\n"
+                "• plus il est négatif, plus le sabot est souvent défavorable"
+            ),
+            "avantage": (
+                "Avantage",
+                "Cette valeur représente une estimation simplifiée de l’avantage du joueur "
+                "à partir du true count.\n\n"
+                "Valeur positive : situation potentiellement favorable.\n"
+                "Valeur négative : situation plutôt défavorable.\n\n"
+                "C’est une approximation pédagogique, pas une mesure exacte."
+            ),
+            "bust": (
+                "Bust",
+                "Probabilité de dépasser 21 si une carte est tirée maintenant.\n\n"
+                "Plus ce pourcentage est élevé, plus tirer est risqué."
+            ),
+            "ameliorer": (
+                "Améliorer la main",
+                "Probabilité d’obtenir un total plus élevé que le total actuel sans dépasser 21.\n\n"
+                "Cette statistique indique le potentiel d’amélioration si une carte est tirée."
+            ),
+            "reco_ev": (
+                "Reco / EV",
+                "Reco : action recommandée selon les calculs.\n\n"
+                "EV stand : valeur attendue si la main reste telle quelle.\n"
+                "EV opt : meilleure valeur attendue possible depuis cette situation.\n"
+                "Edge décision : écart entre la meilleure décision et le fait de rester.\n\n"
+                "Une EV positive est favorable. Une EV négative est défavorable."
+            ),
+            "win_stand": (
+                "Stand (Gagner)",
+                "Pourcentage estimé de simulations Monte Carlo où l’action Stand mène à une victoire.\n\n"
+                "Cela mesure la fréquence de victoire, pas la rentabilité moyenne."
+            ),
+            "win_hit": (
+                "Hit (Gagner)",
+                "Pourcentage estimé de simulations Monte Carlo où l’action Hit mène à une victoire.\n\n"
+                "Cela mesure la fréquence de victoire, pas la valeur attendue."
+            ),
+            "win_double": (
+                "Double (Gagner)",
+                "Pourcentage estimé de simulations Monte Carlo où l’action Double mène à une victoire.\n\n"
+                "Le double peut parfois gagner moins souvent, tout en étant plus rentable selon l’EV."
+            ),
+            "running_count": (
+                "Running Count",
+                "Le running count est le compteur brut des cartes vues.\n\n"
+                "Il augmente ou diminue selon les cartes sorties, mais sans tenir compte "
+                "du nombre de paquets restants."
+            ),
+            "cartes": (
+                "Cartes restantes",
+                "Indique combien de cartes restent dans le sabot par rapport au total initial.\n\n"
+                "Cette information aide à interpréter le true count et l’avancement du sabot."
+            ),
+        }
         self._setup_ui()
 
     def _setup_ui(self):
@@ -247,18 +314,19 @@ class VueJeu(QWidget):
         layout_sidebar = QVBoxLayout(self.sidebar)
         layout_sidebar.setAlignment(Qt.AlignmentFlag.AlignTop)
 
-        self.lbl_true_count = QLabel("True Count : --")
-        self.lbl_true_count.setStyleSheet(
-            "font-size: 14px; color: #FFD700; padding: 4px;"
+        ligne, self.lbl_true_count = self._creer_ligne_stat_avec_aide(
+            "True Count : --", "true_count", "#FFD700"
         )
-        layout_sidebar.addWidget(self.lbl_true_count)
+        layout_sidebar.addWidget(ligne)
 
         # Label pour l'avantage
-        self.lbl_avantage = QLabel("Avantage : --")
+        ligne, self.lbl_avantage = self._creer_ligne_stat_avec_aide(
+            "Avantage : --", "avantage", "#AAA"
+        )
         self.lbl_avantage.setStyleSheet(
             "font-size: 14px; color: #AAA; padding: 4px; font-weight: bold;"
         )
-        layout_sidebar.addWidget(self.lbl_avantage)
+        layout_sidebar.addWidget(ligne)
 
         lbl_probas = QLabel("Probabilités")
         lbl_probas.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -267,17 +335,23 @@ class VueJeu(QWidget):
         )
         layout_sidebar.addWidget(lbl_probas)
 
-        self.lbl_bust = QLabel("Bust : --")
-        self.lbl_bust.setStyleSheet("font-size: 14px; color: #ff6b6b; padding: 4px;")
-        layout_sidebar.addWidget(self.lbl_bust)
+        ligne, self.lbl_bust = self._creer_ligne_stat_avec_aide(
+            "Bust : --", "bust", "#ff6b6b"
+        )
+        layout_sidebar.addWidget(ligne)
 
-        self.lbl_ameliorer = QLabel("Améliorer la main : --")
-        self.lbl_ameliorer.setStyleSheet("font-size: 14px; color: #51cf66; padding: 4px;")
-        layout_sidebar.addWidget(self.lbl_ameliorer)
+        ligne, self.lbl_ameliorer = self._creer_ligne_stat_avec_aide(
+            "Améliorer la main : --", "ameliorer", "#51cf66"
+        )
+        layout_sidebar.addWidget(ligne)
 
-        self.lbl_reco_ev = QLabel("Reco / EV : --")
-        self.lbl_reco_ev.setStyleSheet("font-size: 14px; color: #ffffff; padding: 4px;")
-        layout_sidebar.addWidget(self.lbl_reco_ev)
+        ligne, self.lbl_reco_ev = self._creer_ligne_stat_avec_aide(
+            "Reco / EV : --", "reco_ev", "#ffffff"
+        )
+        layout_sidebar.addWidget(ligne)
+
+        self.lbl_reco_ev.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
+        self.lbl_reco_ev.setWordWrap(True)
 
         # % de victoire
         sep_stats = QFrame()
@@ -285,34 +359,35 @@ class VueJeu(QWidget):
         sep_stats.setStyleSheet("color: #444;")
         layout_sidebar.addWidget(sep_stats)
 
-        self.lbl_win_stand = QLabel("Stand (Gagner) : --")
-        self.lbl_win_stand.setStyleSheet("font-size: 14px; color: #FFF; padding: 4px;")
-        layout_sidebar.addWidget(self.lbl_win_stand)
-
-        self.lbl_win_hit = QLabel("Hit (Gagner) : --")
-        self.lbl_win_hit.setStyleSheet("font-size: 14px; color: #FFF; padding: 4px;")
-        layout_sidebar.addWidget(self.lbl_win_hit)
-
-        self.lbl_win_double = QLabel("Double (Gagner) : --")
-        self.lbl_win_double.setStyleSheet("font-size: 14px; color: #FFF; padding: 4px;")
-        layout_sidebar.addWidget(self.lbl_win_double)
-
-        self.lbl_running_count = QLabel("Running Count : --")
-        self.lbl_running_count.setStyleSheet(
-            "font-size: 14px; color: #AAA; padding: 4px;"
+        ligne, self.lbl_win_stand = self._creer_ligne_stat_avec_aide(
+            "Stand (Gagner) : --", "win_stand", "#FFF"
         )
-        layout_sidebar.addWidget(self.lbl_running_count)
+        layout_sidebar.addWidget(ligne)
+
+        ligne, self.lbl_win_hit = self._creer_ligne_stat_avec_aide(
+            "Hit (Gagner) : --", "win_hit", "#FFF"
+        )
+        layout_sidebar.addWidget(ligne)
+
+        ligne, self.lbl_win_double = self._creer_ligne_stat_avec_aide(
+            "Double (Gagner) : --", "win_double", "#FFF"
+        )
+        layout_sidebar.addWidget(ligne)
+
+        ligne, self.lbl_running_count = self._creer_ligne_stat_avec_aide(
+            "Running Count : --", "running_count", "#AAA"
+        )
+        layout_sidebar.addWidget(ligne)
 
         sep2 = QFrame()
         sep2.setFrameShape(QFrame.Shape.HLine)
         sep2.setStyleSheet("color: #444;")
         layout_sidebar.addWidget(sep2)
 
-        self.lbl_cartes_restantes = QLabel("Cartes : --")
-        self.lbl_cartes_restantes.setStyleSheet(
-            "font-size: 14px; color: #AAA; padding: 4px;"
+        ligne, self.lbl_cartes_restantes = self._creer_ligne_stat_avec_aide(
+            "Cartes : --", "cartes", "#AAA"
         )
-        layout_sidebar.addWidget(self.lbl_cartes_restantes)
+        layout_sidebar.addWidget(ligne)
 
         layout_sidebar.addStretch()
         layout_racine.addWidget(self.sidebar)
@@ -448,6 +523,103 @@ class VueJeu(QWidget):
 
         QTimer.singleShot(200, phase2)
         QTimer.singleShot(500, phase3)
+
+    def _creer_ligne_stat_avec_aide(self, texte_label, cle_aide, couleur_label="#FFF"):
+        container = QWidget()
+        layout = QHBoxLayout(container)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(6)
+
+        label = QLabel(texte_label)
+        label.setStyleSheet(f"font-size: 14px; color: {couleur_label}; padding: 4px;")
+        layout.addWidget(label)
+
+        layout.addStretch()
+
+        btn_aide = QToolButton()
+        btn_aide.setText("?")
+        btn_aide.setCursor(Qt.CursorShape.PointingHandCursor)
+        btn_aide.setFixedSize(18, 18)
+        btn_aide.setStyleSheet("""
+            QToolButton {
+                background-color: #2d2d44;
+                color: #FFD700;
+                border: 1px solid #555;
+                border-radius: 9px;
+                font-size: 11px;
+                font-weight: bold;
+            }
+            QToolButton:hover {
+                border-color: #FFD700;
+                background-color: #3d3d5c;
+            }
+        """)
+        btn_aide.clicked.connect(lambda _, key=cle_aide: self._ouvrir_aide_stat(key))
+
+        layout.addWidget(btn_aide)
+
+        return container, label
+
+    def _ouvrir_aide_stat(self, cle_aide):
+        titre, texte = self.aides_stats.get(
+            cle_aide,
+            ("Aide", "Aucune explication disponible pour cette statistique.")
+        )
+
+        dialog = QDialog(self)
+        dialog.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
+        dialog.setWindowTitle(titre)
+        dialog.setMinimumWidth(420)
+        dialog.setStyleSheet("""
+            QDialog {
+                background-color: #1a1a2e;
+                color: white;
+            }
+            QLabel {
+                color: white;
+            }
+            QTextEdit {
+                background-color: #16213e;
+                color: white;
+                border: 1px solid #444;
+                border-radius: 8px;
+                padding: 8px;
+                font-size: 13px;
+            }
+            QPushButton {
+                background-color: #2d2d44;
+                color: white;
+                border: 2px solid #555;
+                border-radius: 8px;
+                padding: 8px 16px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                border-color: #FFD700;
+            }
+        """)
+
+        layout = QVBoxLayout(dialog)
+
+        lbl_titre = QLabel(titre)
+        lbl_titre.setStyleSheet("font-size: 18px; font-weight: bold; color: #FFD700;")
+        layout.addWidget(lbl_titre)
+
+        txt = QTextEdit()
+        txt.setReadOnly(True)
+        txt.setPlainText(texte)
+        txt.setMinimumHeight(180)
+        layout.addWidget(txt)
+
+        btn_fermer = QPushButton("Fermer")
+        btn_fermer.clicked.connect(dialog.accept)
+
+        ligne_btn = QHBoxLayout()
+        ligne_btn.addStretch()
+        ligne_btn.addWidget(btn_fermer)
+        layout.addLayout(ligne_btn)
+
+        dialog.exec()
 
     def maj_probabilites(self, pct_bust, edge_pct, pct_ameliorer=0.0, stats_actions=None):
         # Bust %

@@ -1,4 +1,5 @@
 #a faire
+from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QMainWindow, QStackedWidget
 
 
@@ -14,7 +15,8 @@ class AppWindow(QMainWindow):
         super().__init__(parent)
         self.setWindowTitle("Stats Jack — Le Laboratoire de Blackjack")
         self.resize(1200, 800)
-
+        self.logo = QIcon("logo/SJlogo.png")
+        self.setWindowIcon(self.logo)
         self.stack = QStackedWidget()
         self.setCentralWidget(self.stack)
 

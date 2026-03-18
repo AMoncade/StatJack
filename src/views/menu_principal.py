@@ -1,3 +1,4 @@
+from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QPushButton, QHBoxLayout
 from PySide6.QtCore import Signal, Qt
 
@@ -16,20 +17,11 @@ class MenuPrincipal(QWidget):
         layout.setAlignment(Qt.AlignCenter)
         layout.setSpacing(20)
 
-        self.label_titre = QLabel("Stats Jack")
-        self.label_titre.setAlignment(Qt.AlignCenter)
-        self.label_titre.setStyleSheet(
-            "font-size: 52px; font-weight: bold; color: #FFD700; "
-            "font-family: 'Georgia'; letter-spacing: 4px;"
-        )
+        self.label_titre = QLabel()
+        self.logo = QPixmap('logo/StatJack(2).png')
+        self.logo_ajuste = self.logo.scaled(502, 260)
+        self.label_titre.setPixmap(self.logo_ajuste)
         layout.addWidget(self.label_titre)
-
-        self.label_sous_titre = QLabel("Le Laboratoire de Blackjack")
-        self.label_sous_titre.setAlignment(Qt.AlignCenter)
-        self.label_sous_titre.setStyleSheet(
-            "font-size: 18px; color: #AAA; font-style: italic;"
-        )
-        layout.addWidget(self.label_sous_titre)
 
         self.label_argent = QLabel()
         self.label_argent.setAlignment(Qt.AlignCenter)
