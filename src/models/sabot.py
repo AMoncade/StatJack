@@ -60,8 +60,7 @@ class Sabot:
         except ValueError:
             return False
 
-        c = self.cartes.pop(idx)
-        self.running_count += c.valeur_hilo()
+        self.cartes.pop(idx)
         return True
 
     def retirer_cartes(self, cartes):

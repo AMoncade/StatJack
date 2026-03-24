@@ -1,10 +1,8 @@
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel,
-    QPushButton, QFrame, QGraphicsOpacityEffect,
-    QToolButton, QDialog, QTextEdit
+    QPushButton, QFrame, QToolButton, QDialog, QTextEdit
 )
-from PySide6.QtCore import Signal, Qt, QPropertyAnimation, QEasingCurve, QTimer
-from PySide6.QtGui import QColor
+from PySide6.QtCore import Signal, Qt, QTimer
 
 from src.views.widgets.carte_widget import CarteWidget
 from src.views.widgets.jeton_widget import JetonWidget
@@ -32,7 +30,6 @@ class VueJeu(QWidget):
         super().__init__(parent)
         self.phase = PHASE_MISE
         self.cercle_actif = "Mise"
-        self._animations_en_cours = []
         self.aides_stats = {
             "true_count": (
                 "True Count",
@@ -502,8 +499,6 @@ class VueJeu(QWidget):
         self._flash_label(self.label_resultat, "#FFD700", "#FFD700")
 
     def _flash_label(self, label, couleur_flash, couleur_finale):
-        style_base = label.styleSheet()
-
         # Phase 1 : gros texte couleur flash
         label.setStyleSheet(
             f"font-size: 34px; color: {couleur_flash}; font-weight: bold; margin: 5px;"
