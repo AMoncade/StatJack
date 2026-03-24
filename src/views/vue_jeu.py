@@ -20,7 +20,7 @@ class VueJeu(QWidget):
     stand_clique = Signal()
     double_clique = Signal()
     split_clique = Signal()
-    miser_clique = Signal(int, int, int)
+    miser_clique = Signal(int)
     prochaine_manche_clique = Signal()
     voir_graphe_clique = Signal()
     retour_menu_clique = Signal()
@@ -246,21 +246,16 @@ class VueJeu(QWidget):
         lbl_mises.setStyleSheet("font-size: 18px; color: white; font-weight: bold;")
         layout_mises.addWidget(lbl_mises)
 
-        # 3 cercles
-        layout_cercles = QHBoxLayout()
-        layout_cercles.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout_cercles.setSpacing(20)
+        # Cercle Mise
+        layout_cercle = QHBoxLayout()
+        layout_cercle.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout_cercle.setSpacing(20)
 
-        self.cercle_pp = CercleMise("PP")
         self.cercle_principale = CercleMise("Mise")
-        self.cercle_21_3 = CercleMise("21+3")
+        self.cercle_principale.cercle_clique.connect(self._on_cercle_clique)
+        layout_cercle.addWidget(self.cercle_principale)
 
-
-        for cercle in [self.cercle_pp, self.cercle_principale, self.cercle_21_3]:
-            cercle.cercle_clique.connect(self._on_cercle_clique)
-            layout_cercles.addWidget(cercle)
-
-        layout_mises.addLayout(layout_cercles)
+        layout_mises.addLayout(layout_cercle)
 
         # 4 jetons
         layout_jetons = QHBoxLayout()
@@ -405,26 +400,17 @@ class VueJeu(QWidget):
         self.cercle_actif = nom
 
     def _on_jeton_clique(self, valeur):
-        if self.cercle_actif == "PP":
-            self.cercle_pp.ajouter_mise(valeur)
-        elif self.cercle_actif == "21+3":
-            self.cercle_21_3.ajouter_mise(valeur)
-        else:
-            self.cercle_principale.ajouter_mise(valeur)
+        self.cercle_principale.ajouter_mise(valeur)
 
     def _reset_mises(self):
-        self.cercle_pp.reset()
         self.cercle_principale.reset()
-        self.cercle_21_3.reset()
         self.cercle_actif = "Mise"
 
     def _on_distribuer(self):
         principale = self.cercle_principale.mise
         if principale <= 0:
             return
-        pp = self.cercle_pp.mise
-        vingt_et_un = self.cercle_21_3.mise
-        self.miser_clique.emit(principale, pp, vingt_et_un)
+        self.miser_clique.emit(principale)
 
     # Affichage
     def afficher_argent(self, montant):

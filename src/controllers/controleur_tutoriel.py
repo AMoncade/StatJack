@@ -76,7 +76,7 @@ ETAPES = [
             "N'oubliez pas :\n"
             "• Consultez les probabilités dans la barre latérale pendant le jeu\n"
             "• Le True Count vous aide à évaluer l'avantage\n"
-            "• Les side bets (PP, 21+3) ajoutent du piment\n\n"
+            "• Comparez les décisions possibles avant de jouer\n\n"
             "Retournez au menu et lancez une partie !"
         ),
         "cartes_joueur": [],

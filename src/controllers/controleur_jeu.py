@@ -19,7 +19,7 @@ class ControleurJeu:
         self.vue.prochaine_manche_clique.connect(self.prochaine_manche)
         self.vue.voir_graphe_clique.connect(self.voir_graphe)
 
-    def action_miser(self, principale, pp=0, vingt_et_un=0):# Side bet non implenté pour l'instant
+    def action_miser(self, principale):
         if self.jeu.manche_en_cours:
             return
         if not self.jeu.placer_mises(principale):
