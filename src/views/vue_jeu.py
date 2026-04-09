@@ -1,8 +1,15 @@
+import io
+
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel,
-    QPushButton, QFrame, QToolButton, QDialog, QTextEdit
+    QPushButton, QFrame, QGraphicsOpacityEffect,
+    QToolButton, QDialog, QTextEdit, QSizePolicy
 )
-from PySide6.QtCore import Signal, Qt, QTimer
+from PySide6.QtCore import Signal, Qt, QPropertyAnimation, QEasingCurve, QTimer
+from PySide6.QtGui import QColor, QPixmap, QImage
+
+from matplotlib.figure import Figure
+from matplotlib.backends.backend_agg import FigureCanvasAgg
 
 from src.views.widgets.carte_widget import CarteWidget
 from src.views.widgets.jeton_widget import JetonWidget
@@ -31,70 +38,194 @@ class VueJeu(QWidget):
         self.phase = PHASE_MISE
         self.cercle_actif = "Mise"
         self.aides_stats = {
-            "true_count": (
-                "True Count",
-                "Le true count est le running count ajusté selon le nombre de paquets "
-                "restants dans le sabot.\n\n"
-                "Il donne une meilleure idée de si le sabot actuel avantage le joueur "
-                "ou le dealer.\n\n"
-                "En général :\n"
-                "• plus il est positif, plus le sabot peut être favorable au joueur\n"
-                "• plus il est négatif, plus le sabot est souvent défavorable"
-            ),
-            "avantage": (
-                "Avantage",
-                "Cette valeur représente une estimation simplifiée de l’avantage du joueur "
-                "à partir du true count.\n\n"
-                "Valeur positive : situation potentiellement favorable.\n"
-                "Valeur négative : situation plutôt défavorable.\n\n"
-                "C’est une approximation pédagogique, pas une mesure exacte."
-            ),
-            "bust": (
-                "Bust",
-                "Probabilité de dépasser 21 si une carte est tirée maintenant.\n\n"
-                "Plus ce pourcentage est élevé, plus tirer est risqué."
-            ),
-            "ameliorer": (
-                "Améliorer la main",
-                "Probabilité d’obtenir un total plus élevé que le total actuel sans dépasser 21.\n\n"
-                "Cette statistique indique le potentiel d’amélioration si une carte est tirée."
-            ),
-            "reco_ev": (
-                "Reco / EV",
-                "Reco : action recommandée selon les calculs.\n\n"
-                "EV stand : valeur attendue si la main reste telle quelle.\n"
-                "EV opt : meilleure valeur attendue possible depuis cette situation.\n"
-                "Edge décision : écart entre la meilleure décision et le fait de rester.\n\n"
-                "Une EV positive est favorable. Une EV négative est défavorable."
-            ),
-            "win_stand": (
-                "Stand (Gagner)",
-                "Pourcentage estimé de simulations Monte Carlo où l’action Stand mène à une victoire.\n\n"
-                "Cela mesure la fréquence de victoire, pas la rentabilité moyenne."
-            ),
-            "win_hit": (
-                "Hit (Gagner)",
-                "Pourcentage estimé de simulations Monte Carlo où l’action Hit mène à une victoire.\n\n"
-                "Cela mesure la fréquence de victoire, pas la valeur attendue."
-            ),
-            "win_double": (
-                "Double (Gagner)",
-                "Pourcentage estimé de simulations Monte Carlo où l’action Double mène à une victoire.\n\n"
-                "Le double peut parfois gagner moins souvent, tout en étant plus rentable selon l’EV."
-            ),
-            "running_count": (
-                "Running Count",
-                "Le running count est le compteur brut des cartes vues.\n\n"
-                "Il augmente ou diminue selon les cartes sorties, mais sans tenir compte "
-                "du nombre de paquets restants."
-            ),
-            "cartes": (
-                "Cartes restantes",
-                "Indique combien de cartes restent dans le sabot par rapport au total initial.\n\n"
-                "Cette information aide à interpréter le true count et l’avancement du sabot."
-            ),
+            "bust": {
+                "titre": "Bust",
+                "texte": (
+                    "Probabilité de dépasser 21 si une carte est tirée maintenant.\n\n"
+                    "Plus ce pourcentage est élevé, plus tirer est risqué."
+                ),
+                "latex": r"P(\mathrm{bust})=\sum_{v:\,f(T,S,v)>21} p(v)",
+                "legende": (
+                    "T : total actuel du joueur\n\n"
+                    "S : nombre d’as encore comptés comme 11\n\n"
+                    "v : valeur d’une carte possible\n\n"
+                    "p(v) : probabilité de tirer une carte de valeur v\n\n"
+                    "f(T,S,v) : total obtenu après avoir tiré v, avec ajustement des as"
+                )
+            },
+
+            "ameliorer": {
+                "titre": "Améliorer la main",
+                "texte": (
+                    "Probabilité d’obtenir un total plus élevé que le total actuel "
+                    "sans dépasser 21.\n\n"
+                    "Cette statistique mesure le potentiel d’amélioration si une carte est tirée."
+                ),
+                "latex": r"P(\mathrm{ameliorer})=\sum_{v:\,T<f(T,S,v)\leq 21} p(v)",
+                "legende": (
+                    "T : total actuel du joueur\n\n"
+                    "S : nombre d’as encore comptés comme 11\n\n"
+                    "v : valeur d’une carte possible\n\n"
+                    "p(v) : probabilité de tirer une carte de valeur v\n\n"
+                    "f(T,S,v) : total obtenu après avoir tiré v, avec ajustement des as"
+                )
+            },
+
+            "reco_ev": {
+                "titre": "Reco / EV",
+                "texte": (
+                    "Reco : action recommandée selon les calculs.\n\n"
+                    "EV stand : valeur attendue si la main reste telle quelle.\n"
+                    "EV opt : meilleure valeur attendue possible entre rester "
+                    "ou continuer à tirer de façon optimale.\n"
+                    "Edge décision : écart entre la meilleure décision et le fait de rester."
+                ),
+                "latex": r"EV^*(T,S)=\max\left(EV_{\mathrm{stand}}(T),\sum_v p(v)\,EV^*(T_v,S_v)\right)",
+                "legende": (
+                    "EV* : meilleure valeur attendue possible depuis cet état\n\n"
+                    "EV_stand(T) : valeur attendue si le joueur reste immédiatement\n\n"
+                    "T : total actuel du joueur\n\n"
+                    "S : nombre d’as encore comptés comme 11\n\n"
+                    "v : valeur d’une carte possible\n\n"
+                    "p(v) : probabilité de tirer une carte de valeur v\n\n"
+                    "T_v : nouveau total après tirage de v\n\n"
+                    "S_v : nouveau nombre d’as encore comptés comme 11 après tirage"
+                )
+            },
+
+            "win_stand": {
+                "titre": "Stand (Gagner)",
+                "texte": (
+                    "Pourcentage estimé de simulations Monte Carlo où l’action Stand "
+                    "mène à une victoire.\n\n"
+                    "Cela mesure une fréquence de victoire, pas une rentabilité moyenne."
+                ),
+                "latex": r"\hat{P}(\mathrm{victoire}\mid a)=\frac{\#\mathrm{victoires\ sous}\ a}{N}\times 100",
+                "legende": (
+                    "P̂ : probabilité estimée par simulation\n\n"
+                    "a : action simulée, ici Stand\n\n"
+                    "# victoires sous a : nombre de simulations gagnées avec cette action\n\n"
+                    "N : nombre total de simulations"
+                )
+            },
+
+            "win_hit": {
+                "titre": "Hit (Gagner)",
+                "texte": (
+                    "Pourcentage estimé de simulations Monte Carlo où l’action Hit "
+                    "mène à une victoire.\n\n"
+                    "Cela mesure une fréquence de victoire, pas une valeur attendue."
+                ),
+                "latex": r"\hat{P}(\mathrm{victoire}\mid a)=\frac{\#\mathrm{victoires\ sous}\ a}{N}\times 100",
+                "legende": (
+                    "P̂ : probabilité estimée par simulation\n\n"
+                    "a : action simulée, ici Hit\n\n"
+                    "# victoires sous a : nombre de simulations gagnées avec cette action\n\n"
+                    "N : nombre total de simulations"
+                )
+            },
+
+            "win_double": {
+                "titre": "Double (Gagner)",
+                "texte": (
+                    "Pourcentage estimé de simulations Monte Carlo où l’action Double "
+                    "mène à une victoire.\n\n"
+                    "Une action peut gagner moins souvent tout en ayant une meilleure EV."
+                ),
+                "latex": r"\hat{P}(\mathrm{victoire}\mid a)=\frac{\#\mathrm{victoires\ sous}\ a}{N}\times 100",
+                "legende": (
+                    "P̂ : probabilité estimée par simulation\n\n"
+                    "a : action simulée, ici Double\n\n"
+                    "# victoires sous a : nombre de simulations gagnées avec cette action\n\n"
+                    "N : nombre total de simulations"
+                )
+            },
+
+            "running_count": {
+                "titre": "Running Count",
+                "texte": (
+                    "Le running count est le compteur brut des cartes vues.\n\n"
+                    "Il augmente ou diminue selon les cartes sorties, sans tenir compte "
+                    "du nombre de paquets restants."
+                ),
+                "latex": r"RC=\sum_{i=1}^{n} c_i",
+                "legende": (
+                    "RC : running count\n\n"
+                    "i : indice d’une carte observée\n\n"
+                    "n : nombre total de cartes observées\n\n"
+                    "c_i : contribution de la iᵉ carte observée au count"
+                )
+            },
+
+            "true_count": {
+                "titre": "True Count",
+                "texte": (
+                    "Le true count est le running count ajusté selon le nombre de paquets restants.\n\n"
+                    "Il donne une meilleure idée de si le sabot actuel avantage le joueur."
+                ),
+                "latex": r"TC=\frac{RC}{\mathrm{paquets\ restants}}",
+                "legende": (
+                    "TC : true count\n\n"
+                    "RC : running count\n\n"
+                    "paquets restants : estimation du nombre de paquets encore dans le sabot"
+                )
+            },
+
+            "avantage": {
+                "titre": "Avantage",
+                "texte": (
+                    "Estimation simplifiée de l’avantage du joueur à partir du true count.\n\n"
+                    "Valeur positive : situation potentiellement favorable.\n"
+                    "Valeur négative : situation plutôt défavorable."
+                ),
+                "latex": r"\mathrm{Avantage}=-0.5+0.5\cdot TC",
+                "legende": (
+                    "Avantage : estimation simplifiée de l’avantage du joueur, en pourcentage\n\n"
+                    "TC : true count"
+                )
+            },
+
+            "cartes": {
+                "titre": "Cartes restantes",
+                "texte": (
+                    "Indique combien de cartes restent dans le sabot par rapport au total initial."
+                ),
+                "latex": r"N=\mathrm{cartes\ restantes}",
+                "legende": (
+                    "N : nombre de cartes restantes dans le sabot"
+                )
+            },
         }
         self._setup_ui()
+
+    def _latex_vers_pixmap(self, latex, fontsize=16, text_color="white", bg_color="#16213e"):
+        fig = Figure(figsize=(6, 1.2), dpi=150)
+        fig.patch.set_facecolor(bg_color)
+
+        canvas = FigureCanvasAgg(fig)
+        ax = fig.add_subplot(111)
+        ax.set_facecolor(bg_color)
+        ax.axis("off")
+
+        # Texte centré
+        ax.text(
+            0.5, 0.5,
+            f"${latex}$",
+            ha="center",
+            va="center",
+            fontsize=fontsize,
+            color=text_color
+        )
+
+        # Ajuster automatiquement la taille
+        fig.tight_layout(pad=0.4)
+
+        buffer = io.BytesIO()
+        canvas.print_png(buffer)
+        buffer.seek(0)
+
+        image = QImage.fromData(buffer.getvalue())
+        return QPixmap.fromImage(image)
 
     def _setup_ui(self):
         layout_racine = QHBoxLayout(self)
@@ -513,6 +644,7 @@ class VueJeu(QWidget):
 
         label = QLabel(texte_label)
         label.setStyleSheet(f"font-size: 14px; color: {couleur_label}; padding: 4px;")
+        label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         layout.addWidget(label)
 
         layout.addStretch()
@@ -536,21 +668,35 @@ class VueJeu(QWidget):
             }
         """)
         btn_aide.clicked.connect(lambda _, key=cle_aide: self._ouvrir_aide_stat(key))
-
         layout.addWidget(btn_aide)
 
         return container, label
 
     def _ouvrir_aide_stat(self, cle_aide):
-        titre, texte = self.aides_stats.get(
-            cle_aide,
-            ("Aide", "Aucune explication disponible pour cette statistique.")
-        )
+        aide = self.aides_stats.get(cle_aide)
+
+        if not aide:
+            titre = "Aide"
+            texte = "Aucune explication disponible pour cette statistique."
+            latex = None
+            legende = "Aucune légende disponible."
+        else:
+            titre = aide.get("titre", "Aide")
+            texte = aide.get("texte", "")
+            latex = aide.get("latex")
+            legende = aide.get("legende", "Aucune légende disponible.")
 
         dialog = QDialog(self)
-        dialog.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
         dialog.setWindowTitle(titre)
-        dialog.setMinimumWidth(420)
+        dialog.setModal(True)
+        dialog.setMinimumWidth(520)
+        dialog.setWindowFlags(
+            Qt.WindowType.Dialog |
+            Qt.WindowType.WindowTitleHint |
+            Qt.WindowType.CustomizeWindowHint |
+            Qt.WindowType.WindowCloseButtonHint
+        )
+
         dialog.setStyleSheet("""
             QDialog {
                 background-color: #1a1a2e;
@@ -581,10 +727,104 @@ class VueJeu(QWidget):
         """)
 
         layout = QVBoxLayout(dialog)
+        layout.setSpacing(12)
 
         lbl_titre = QLabel(titre)
         lbl_titre.setStyleSheet("font-size: 18px; font-weight: bold; color: #FFD700;")
+        lbl_titre.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(lbl_titre)
+
+        if latex:
+            formule_frame = QFrame()
+            formule_frame.setStyleSheet("""
+                QFrame {
+                    background-color: #16213e;
+                    border: 1px solid #444;
+                    border-radius: 8px;
+                }
+            """)
+            formule_layout = QVBoxLayout(formule_frame)
+            formule_layout.setContentsMargins(10, 10, 10, 10)
+
+            lbl_formule_titre = QLabel("Formule")
+            lbl_formule_titre.setStyleSheet(
+                "font-size: 13px; font-weight: bold; color: #FFD700;"
+            )
+            formule_layout.addWidget(lbl_formule_titre)
+
+            lbl_formule = QLabel()
+            lbl_formule.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            lbl_formule.setSizePolicy(
+                QSizePolicy.Policy.Expanding,
+                QSizePolicy.Policy.Fixed
+            )
+
+            pixmap = self._latex_vers_pixmap(latex)
+            lbl_formule.setPixmap(pixmap)
+            formule_layout.addWidget(lbl_formule)
+
+            layout.addWidget(formule_frame)
+
+        # ---- LÉGENDE COLLAPSIBLE ----
+        btn_legende = QPushButton("▸ Voir la légende")
+        btn_legende.setCheckable(True)
+        btn_legende.setChecked(False)
+        btn_legende.setStyleSheet("""
+            QPushButton {
+                background-color: #2d2d44;
+                color: white;
+                border: 2px solid #555;
+                border-radius: 8px;
+                padding: 8px 12px;
+                font-weight: bold;
+                text-align: left;
+            }
+            QPushButton:hover {
+                border-color: #FFD700;
+            }
+        """)
+        layout.addWidget(btn_legende)
+
+        legende_frame = QFrame()
+        legende_frame.setVisible(False)
+        legende_frame.setStyleSheet("""
+            QFrame {
+                background-color: #16213e;
+                border: 1px solid #444;
+                border-radius: 8px;
+            }
+        """)
+        layout_legende = QVBoxLayout(legende_frame)
+        layout_legende.setContentsMargins(10, 10, 10, 10)
+
+        lbl_legende = QLabel("Légende des variables")
+        lbl_legende.setStyleSheet(
+            "font-size: 13px; font-weight: bold; color: #FFD700;"
+        )
+        layout_legende.addWidget(lbl_legende)
+
+        txt_legende = QTextEdit()
+        txt_legende.setReadOnly(True)
+        txt_legende.setPlainText(legende)
+        txt_legende.setMaximumHeight(132 if len(legende) < 180 else 180)
+        layout_legende.addWidget(txt_legende)
+
+        layout.addWidget(legende_frame)
+
+        def toggle_legende(checked):
+            legende_frame.setVisible(checked)
+            btn_legende.setText(
+                "▾ Masquer la légende" if checked else "▸ Voir la légende"
+            )
+            dialog.adjustSize()
+
+        btn_legende.toggled.connect(toggle_legende)
+
+        lbl_explication = QLabel("Explication")
+        lbl_explication.setStyleSheet(
+            "font-size: 13px; font-weight: bold; color: #FFD700;"
+        )
+        layout.addWidget(lbl_explication)
 
         txt = QTextEdit()
         txt.setReadOnly(True)
