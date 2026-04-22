@@ -1,216 +1,90 @@
-import struct
-import wave
-import math
-import tempfile
-import subprocess
-import sys
 from pathlib import Path
 
-from PySide6.QtCore import QTimer, QObject
+from PySide6.QtCore import QObject, QUrl
+from PySide6.QtWidgets import QApplication
+from PySide6.QtMultimedia import QSoundEffect, QMediaPlayer, QAudioOutput
 
 
-DOSSIER_AUDIO = Path(tempfile.gettempdir()) / "statjack_audio"
-
-
-def _generer_wav(chemin, echantillons, sample_rate=44100):
-    chemin.parent.mkdir(parents=True, exist_ok=True)
-    with wave.open(str(chemin), "w") as f:
-        f.setnchannels(1)
-        f.setsampwidth(2)
-        f.setframerate(sample_rate)
-        for s in echantillons:
-            val = max(-32767, min(32767, int(s * 32767)))
-            f.writeframes(struct.pack("<h", val))
-
-
-def _generer_musique():
-    chemin = DOSSIER_AUDIO / "musique.wav"
-    if chemin.exists():
-        return chemin
-    sr = 44100
-    duree = 30
-    samples = []
-    accords = [
-        (0, [261.63, 329.63, 392.00]),
-        (7.5, [293.66, 369.99, 440.00]),
-        (15, [246.94, 311.13, 369.99]),
-        (22.5, [261.63, 329.63, 392.00]),
-    ]
-    for i in range(sr * duree):
-        t = i / sr
-        idx = 0
-        for j, (debut, _) in enumerate(accords):
-            if t >= debut:
-                idx = j
-        freqs = accords[idx][1]
-        val = 0
-        for freq in freqs:
-            val += 0.15 * math.sin(2 * math.pi * freq * t)
-        fade_in = min(t / 0.5, 1.0)
-        fade_out = min((duree - t) / 0.5, 1.0)
-        val *= fade_in * fade_out
-        samples.append(val)
-    _generer_wav(chemin, samples, sr)
-    return chemin
-
-
-def _generer_son_carte():
-    chemin = DOSSIER_AUDIO / "carte.wav"
-    if chemin.exists():
-        return chemin
-    sr = 44100
-    duree = 0.15
-    samples = []
-    import random
-    random.seed(42)
-    for i in range(int(sr * duree)):
-        t = i / sr
-        bruit = random.uniform(-1, 1)
-        envelope = max(0, 1 - t / duree)
-        samples.append(bruit * envelope * 0.4)
-    _generer_wav(chemin, samples, sr)
-    return chemin
-
-
-def _generer_son_victoire():
-    chemin = DOSSIER_AUDIO / "victoire.wav"
-    if chemin.exists():
-        return chemin
-    sr = 44100
-    duree = 0.6
-    samples = []
-    notes = [523.25, 659.25, 783.99]
-    for i in range(int(sr * duree)):
-        t = i / sr
-        idx = min(int(t / (duree / 3)), 2)
-        freq = notes[idx]
-        envelope = max(0, 1 - (t % (duree / 3)) / (duree / 3) * 0.5)
-        samples.append(0.35 * math.sin(2 * math.pi * freq * t) * envelope)
-    _generer_wav(chemin, samples, sr)
-    return chemin
-
-
-def _generer_son_defaite():
-    chemin = DOSSIER_AUDIO / "defaite.wav"
-    if chemin.exists():
-        return chemin
-    sr = 44100
-    duree = 0.4
-    samples = []
-    for i in range(int(sr * duree)):
-        t = i / sr
-        freq = 300 - 150 * (t / duree)
-        envelope = max(0, 1 - t / duree)
-        samples.append(0.3 * math.sin(2 * math.pi * freq * t) * envelope)
-    _generer_wav(chemin, samples, sr)
-    return chemin
+AUDIO_DIR = Path(__file__).resolve().parent.parent.parent / "audio"
 
 
 class AudioManager(QObject):
-
     def __init__(self, settings, parent=None):
         super().__init__(parent)
         self.settings = settings
-        self._chemin_musique = None
-        self._chemin_carte = None
-        self._chemin_victoire = None
-        self._chemin_defaite = None
-        self._process_musique = None
 
-    def _init_fichiers(self):
-        # Supprimer les anciens fichiers 22050Hz pour forcer la regénération en 44100Hz
-        for nom in ["musique.wav", "carte.wav", "victoire.wav", "defaite.wav"]:
-            p = DOSSIER_AUDIO / nom
-            if p.exists():
-                try:
-                    with wave.open(str(p), "r") as f:
-                        if f.getframerate() != 44100:
-                            p.unlink()
-                except Exception:
-                    pass
+        self.theme = AUDIO_DIR / "theme(placeholder).wav"
+        self.card_path = AUDIO_DIR / "card1.wav"
+        self.shuffle_path = AUDIO_DIR / "shuffle.wav"
+        self.win_path = AUDIO_DIR / "win.wav"
+        self.lose_path = AUDIO_DIR / "lose.wav"
 
-        if self._chemin_musique is None:
-            self._chemin_musique = _generer_musique()
-        if self._chemin_carte is None:
-            self._chemin_carte = _generer_son_carte()
-        if self._chemin_victoire is None:
-            self._chemin_victoire = _generer_son_victoire()
-        if self._chemin_defaite is None:
-            self._chemin_defaite = _generer_son_defaite()
+        self.audio_output = QAudioOutput(self)
+        self.audio_output.setVolume(0.4)
 
-    def _jouer_afplay(self, chemin):
-        if sys.platform == "darwin":
-            try:
-                subprocess.Popen(
-                    ["afplay", str(chemin)],
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.DEVNULL,
-                )
-            except FileNotFoundError:
-                pass
-        else:
-            try:
-                subprocess.Popen(
-                    ["aplay", str(chemin)],
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.DEVNULL,
-                )
-            except FileNotFoundError:
-                pass
+        self.music_player = QMediaPlayer(self)
+        self.music_player.setAudioOutput(self.audio_output)
+        self.music_player.setSource(QUrl.fromLocalFile(str(self.theme.resolve())))
+
+        # Essaie ceci d'abord si ta version le supporte
+        try:
+            self.music_player.setLoops(-1)
+        except Exception:
+            self.music_player.mediaStatusChanged.connect(self._gerer_boucle_musique)
+
+        self.card_sound = self._creer_sound_effect(self.card_path)
+        self.shuffle_sound = self._creer_sound_effect(self.shuffle_path)
+        self.win_sound = self._creer_sound_effect(self.win_path)
+        self.lose_sound = self._creer_sound_effect(self.lose_path)
+
+        app = QApplication.instance()
+        if app is not None:
+            app.aboutToQuit.connect(self.cleanup)
+
+    def _creer_sound_effect(self, chemin, volume=0.8):
+        sound = QSoundEffect(self)
+        sound.setSource(QUrl.fromLocalFile(str(chemin.resolve())))
+        sound.setVolume(volume)
+        return sound
+
+    def _gerer_boucle_musique(self, status):
+        if status == QMediaPlayer.EndOfMedia:
+            self.music_player.setPosition(0)
+            self.music_player.play()
 
     def jouer_musique(self):
         if not self.settings.get("musique"):
             return
-        self._init_fichiers()
-        self.arreter_musique()
-        self._boucle_musique()
 
-    def _boucle_musique(self):
-        if not self.settings.get("musique"):
-            return
-        if sys.platform == "darwin":
-            try:
-                self._process_musique = subprocess.Popen(
-                    ["afplay", str(self._chemin_musique)],
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.DEVNULL,
-                )
-                self._verifier_fin_musique()
-            except FileNotFoundError:
-                pass
-
-    def _verifier_fin_musique(self):
-        if self._process_musique and self._process_musique.poll() is not None:
-            if self.settings.get("musique"):
-                self._boucle_musique()
-        elif self._process_musique:
-            QTimer.singleShot(1000, self._verifier_fin_musique)
+        if self.music_player.playbackState() != QMediaPlayer.PlayingState:
+            self.music_player.play()
 
     def arreter_musique(self):
-        if self._process_musique:
-            try:
-                self._process_musique.terminate()
-            except Exception:
-                pass
-            self._process_musique = None
+        self.music_player.stop()
 
-    def jouer_son_carte(self):
+    def jouer_son_hit(self):
         if not self.settings.get("sons"):
             return
-        self._init_fichiers()
-        self._jouer_afplay(self._chemin_carte)
+        if self.card_sound.isLoaded():
+            self.card_sound.play()
+
+    def jouer_son_shuffle(self):
+        if not self.settings.get("sons"):
+            return
+        if self.shuffle_sound.isLoaded():
+            self.shuffle_sound.play()
 
     def jouer_son_victoire(self):
         if not self.settings.get("sons"):
             return
-        self._init_fichiers()
-        self._jouer_afplay(self._chemin_victoire)
+        if self.win_sound.isLoaded():
+            self.win_sound.play()
 
     def jouer_son_defaite(self):
         if not self.settings.get("sons"):
             return
-        self._init_fichiers()
-        self._jouer_afplay(self._chemin_defaite)
+        if self.lose_sound.isLoaded():
+            self.lose_sound.play()
 
     def toggle_musique(self, actif):
         self.settings.set("musique", actif)
@@ -221,3 +95,6 @@ class AudioManager(QObject):
 
     def toggle_sons(self, actif):
         self.settings.set("sons", actif)
+
+    def cleanup(self):
+        self.music_player.stop()

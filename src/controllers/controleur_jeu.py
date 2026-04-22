@@ -26,7 +26,7 @@ class ControleurJeu:
             self.vue.label_resultat.setText("Fonds insuffisants !")
             return
         self.jeu.demarrer_manche()
-        self.audio.jouer_son_carte()
+        self.audio.jouer_son_shuffle()
         self.vue.set_phase(PHASE_JEU)
         self._rafraichir(reveler=False)
 
@@ -45,7 +45,7 @@ class ControleurJeu:
         carte = self.jeu.joueur_tire()
         if carte is None:
             return
-        self.audio.jouer_son_carte()
+        self.audio.jouer_son_hit()
 
         total = self.jeu.joueur.valeur_totale()
 

@@ -25,3 +25,8 @@ class AppWindow(QMainWindow):
 
     def aller_a(self, index):
         self.stack.setCurrentIndex(index)
+
+    def closeEvent(self, event):
+        if hasattr(self, "audio_manager") and self.audio_manager:
+            self.audio_manager.cleanup()
+        super().closeEvent(event)
