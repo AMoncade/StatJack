@@ -185,8 +185,11 @@ class CalculateurProbabilites:
 
         ev_stand = CalculateurProbabilites.ev_stand(total, dealer_dist)
 
-        # Coupure logique : inutile d'explorer hit sur 19, 20 ou 21
-        if total >= 19:
+        # Coupure logique: On évite d'explorer Hit sur les mains hard de 19+ et sur toute main de 20+
+        if total >= 19 and soft_aces == 0:
+            memo[key] = ev_stand
+            return ev_stand
+        if total >= 20:
             memo[key] = ev_stand
             return ev_stand
 

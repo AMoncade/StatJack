@@ -39,7 +39,10 @@ class Sabot:
         return len(self.cartes)
 
     def true_count(self):
-        paquets_restants = max(self.cartes_restantes() / 52, 0.5)
+        if self.cartes_restantes() == 0:
+            return 0
+
+        paquets_restants = self.cartes_restantes() / 52
         return self.running_count / paquets_restants
 
     def clone(self):
