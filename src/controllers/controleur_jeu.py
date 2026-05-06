@@ -47,7 +47,7 @@ class ControleurJeu:
             return
         if self.jeu.joueur.est_busted():
             return
-        if self.settings.get("mode_entrainement") == True:
+        if self.settings.get("mode_entrainement"):
             if not self._verifier_decision_mathematique("Hit"):
                 return
         carte = self.jeu.joueur_tire()
@@ -70,8 +70,8 @@ class ControleurJeu:
             return
         if self.jeu.joueur.est_busted():
             return
-        if self.settings.get("mode_entrainement") == True:
-            if not self._verifier_decision_mathematique("Hit"):
+        if self.settings.get("mode_entrainement"):
+            if not self._verifier_decision_mathematique("Stand"):
                 return
         if not self.jeu.passer_main_suivante():
             self._finir_manche()
@@ -85,8 +85,8 @@ class ControleurJeu:
             return
         if not self.jeu.joueur.peut_double():
             return
-        if self.settings.get("mode_entrainement") == True:
-            if not self._verifier_decision_mathematique("Hit"):
+        if self.settings.get("mode_entrainement"):
+            if not self._verifier_decision_mathematique("Double"):
                 return
         carte = self.jeu.joueur_double()
         if carte is None:
@@ -108,8 +108,8 @@ class ControleurJeu:
             return
         if not self.jeu.joueur.peut_split():
             return
-        if self.settings.get("mode_entrainement") == True:
-            if not self._verifier_decision_mathematique("Hit"):
+        if self.settings.get("mode_entrainement"):
+            if not self._verifier_decision_mathematique("Split"):
                 return
         if not self.jeu.joueur_split():
             return
@@ -154,6 +154,9 @@ class ControleurJeu:
         dialog.exec()
 
     def _rafraichir(self, reveler):
+        mode_actif = self.settings.get("mode_entrainement") == True
+        self.vue.sidebar.setVisible(not mode_actif)
+
         self.vue.afficher_cartes_dealer(self.jeu.dealer.cartes, reveler=reveler)
         self.vue.afficher_cartes_joueur(
             self.jeu.mains_joueur, self.jeu.index_main_active
