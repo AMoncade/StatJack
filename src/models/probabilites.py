@@ -94,7 +94,7 @@ class CalculateurProbabilites:
         return {v: count / cartes_restantes for v, count in sorted(compteur.items())}
 
     @staticmethod
-    def dealer_distribution(sabot, dealer_upcard, nb_simulations=5000):
+    def dealer_distribution(sabot, dealer_upcard, nb_simulations=5000, dealer_hole_card=None):
         outcomes = Counter()
 
         for _ in range(nb_simulations):
@@ -105,10 +105,20 @@ class CalculateurProbabilites:
 
             main_d = MainJoueur()
             main_d.ajouter_carte(dealer_upcard)
-            main_d.ajouter_carte(s.tirer())  # hole
+
+            if dealer_hole_card is not None:
+                main_d.ajouter_carte(dealer_hole_card)
+            else:
+                carte_cachee = s.tirer()
+                if carte_cachee is None:
+                    continue
+                main_d.ajouter_carte(carte_cachee)
 
             while main_d.valeur_totale() < 17:
-                main_d.ajouter_carte(s.tirer())
+                carte = s.tirer()
+                if carte is None:
+                    break
+                main_d.ajouter_carte(carte)
 
             t = main_d.valeur_totale()
             outcomes["bust" if t > 21 else t] += 1
