@@ -113,7 +113,7 @@ class ControleurJeu:
         self.audio.jouer_son_hit()
 
         total = self.jeu.joueur.valeur_totale()
-        if total >= 21:
+        if total >= 21 or self.jeu.joueur.main_fermee:
             if not self.jeu.passer_main_suivante():
                 self._finir_manche()
             else:
