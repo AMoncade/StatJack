@@ -375,8 +375,18 @@ class CalculateurProbabilites:
 
                 total_joueur = sim_joueur.valeur_totale()
                 total_dealer = sim_dealer.valeur_totale()
+                bj_joueur = sim_joueur.est_blackjack()
+                bj_dealer = sim_dealer.est_blackjack()
 
-                if total_dealer > 21 or total_joueur > total_dealer:
+                if bj_joueur and bj_dealer:
+                    egalites += 1
+                elif bj_joueur:
+                    victoires += 1
+                    gain_total += 1.5
+                elif bj_dealer:
+                    defaites += 1
+                    gain_total -= 1 * multiplicateur
+                elif total_dealer > 21 or total_joueur > total_dealer:
                     victoires += 1
                     gain_total += 1 * multiplicateur
                 elif total_joueur < total_dealer:
