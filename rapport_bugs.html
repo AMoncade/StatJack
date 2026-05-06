@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StatJack - Rapport de bugs</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0d1117;
+            color: #c9d1d9;
+            line-height: 1.6;
+            padding: 2rem;
+        }
+        h1 {
+            text-align: center;
+            color: #58a6ff;
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        .subtitle {
+            text-align: center;
+            color: #8b949e;
+            margin-bottom: 2rem;
+            font-size: 0.95rem;
+        }
+        .summary {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            margin-bottom: 2.5rem;
+            flex-wrap: wrap;
+        }
+        .summary-card {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 10px;
+            padding: 1rem 2rem;
+            text-align: center;
+            min-width: 130px;
+        }
+        .summary-card .count {
+            font-size: 2.2rem;
+            font-weight: bold;
+        }
+        .summary-card .label {
+            font-size: 0.85rem;
+            color: #8b949e;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .critical .count { color: #f85149; }
+        .major .count { color: #d29922; }
+        .minor .count { color: #58a6ff; }
+        .cosmetic .count { color: #8b949e; }
+        .total .count { color: #f0f6fc; }
+
+        .bug {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 10px;
+            margin-bottom: 1.2rem;
+            overflow: hidden;
+            transition: border-color 0.2s;
+        }
+        .bug:hover { border-color: #58a6ff; }
+
+        .bug-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem 1.5rem;
+            cursor: pointer;
+            user-select: none;
+        }
+        .bug-header:hover { background: #1c2128; }
+
+        .badge {
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 0.2rem 0.7rem;
+            border-radius: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            white-space: nowrap;
+        }
+        .badge-critical { background: #f8514922; color: #f85149; border: 1px solid #f8514944; }
+        .badge-major { background: #d2992222; color: #d29922; border: 1px solid #d2992244; }
+        .badge-minor { background: #58a6ff22; color: #58a6ff; border: 1px solid #58a6ff44; }
+        .badge-cosmetic { background: #8b949e22; color: #8b949e; border: 1px solid #8b949e44; }
+
+        .bug-title {
+            font-weight: 600;
+            color: #f0f6fc;
+            flex: 1;
+        }
+        .bug-file {
+            font-size: 0.8rem;
+            color: #8b949e;
+            font-family: 'Cascadia Code', 'Fira Code', monospace;
+        }
+        .chevron {
+            color: #484f58;
+            transition: transform 0.2s;
+            font-size: 1.2rem;
+        }
+        .bug.open .chevron { transform: rotate(90deg); }
+
+        .bug-body {
+            display: none;
+            padding: 0 1.5rem 1.5rem;
+            border-top: 1px solid #21262d;
+        }
+        .bug.open .bug-body { display: block; }
+
+        .bug-body h4 {
+            color: #58a6ff;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-top: 1rem;
+            margin-bottom: 0.3rem;
+        }
+        .bug-body p, .bug-body code {
+            font-size: 0.92rem;
+        }
+        code {
+            background: #0d1117;
+            border: 1px solid #30363d;
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+            font-family: 'Cascadia Code', 'Fira Code', monospace;
+            font-size: 0.85rem;
+            color: #e6edf3;
+        }
+        pre {
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 1rem;
+            overflow-x: auto;
+            margin-top: 0.5rem;
+            font-size: 0.85rem;
+            line-height: 1.5;
+        }
+        pre code {
+            background: none;
+            border: none;
+            padding: 0;
+        }
+        .top3 {
+            background: linear-gradient(135deg, #161b22, #1c1f26);
+            border: 1px solid #f8514944;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 2.5rem;
+        }
+        .top3 h2 {
+            color: #f85149;
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+        }
+        .top3 ol {
+            padding-left: 1.5rem;
+        }
+        .top3 li {
+            margin-bottom: 0.5rem;
+        }
+        .section-title {
+            color: #58a6ff;
+            font-size: 1.3rem;
+            margin: 2rem 0 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid #21262d;
+        }
+        footer {
+            text-align: center;
+            color: #484f58;
+            margin-top: 3rem;
+            font-size: 0.8rem;
+        }
+    </style>
+</head>
+<body>
+
+<h1>StatJack - Rapport de bugs</h1>
+<p class="subtitle">Scan complet du projet <code>progTPfinale</code> &mdash; 6 mai 2026</p>
+
+<div class="summary">
+    <div class="summary-card critical">
+        <div class="count">1</div>
+        <div class="label">Critique</div>
+    </div>
+    <div class="summary-card major">
+        <div class="count">8</div>
+        <div class="label">Majeur</div>
+    </div>
+    <div class="summary-card minor">
+        <div class="count">12</div>
+        <div class="label">Mineur</div>
+    </div>
+    <div class="summary-card cosmetic">
+        <div class="count">3</div>
+        <div class="label">Cosmetique</div>
+    </div>
+    <div class="summary-card total">
+        <div class="count">24</div>
+        <div class="label">Total</div>
+    </div>
+</div>
+
+<div class="top3">
+    <h2>Top 3 - Corrections prioritaires</h2>
+    <ol>
+        <li><strong>Bug #1</strong> &mdash; <code>tirer()</code> retourne <code>None</code> sans verification dans plusieurs chemins (crash potentiel)</li>
+        <li><strong>Bug #7</strong> &mdash; Le mode entrainement bloque le UI avec un calcul Monte Carlo synchrone</li>
+        <li><strong>Bug #8 + #11</strong> &mdash; Mode entrainement incomplet (cle manquante dans DEFAUTS + Double/Split non valides)</li>
+    </ol>
+</div>
+
+<!-- ============ CRITIQUE ============ -->
+<h2 class="section-title">Critique</h2>
+
+<div class="bug">
+    <div class="bug-header" onclick="this.parentElement.classList.toggle('open')">
+        <span class="badge badge-critical">Critique</span>
+        <span class="bug-title">#1 &mdash; <code>tirer()</code> retourne None sans gestion dans plusieurs chemins</span>
+        <span class="bug-file">jeu.py</span>
+        <span class="chevron">&#9654;</span>
+    </div>
+    <div class="bug-body">
+        <h4>Fichier &amp; lignes</h4>
+        <p><code>src/models/jeu.py</code> &mdash; lignes 40-43, 49, 61, 78-79, 95</p>
+        <h4>Description</h4>
+        <p><code>demarrer_manche()</code> appelle <code>self.sabot.tirer()</code> 4 fois sans verifier si le retour est <code>None</code>. Si le sabot a moins de 4 cartes mais plus de 20 (seuil de reinitialisation a la ligne 37), <code>tirer()</code> retourne <code>None</code> et <code>ajouter_carte(None)</code> ajoute <code>None</code> a la main. Ensuite, <code>valeur_blackjack()</code> sur <code>None</code> crash avec <code>AttributeError</code>.</p>
+        <p>Meme probleme dans <code>joueur_tire()</code> (ligne 49), <code>tour_du_dealer()</code> (ligne 95), et <code>joueur_split()</code> (lignes 78-79).</p>
+        <h4>Declencheur</h4>
+        <p>Le sabot a entre 0 et 19 cartes restantes (pas assez pour reinitialiser) et plusieurs tirages l'epuisent en cours de partie. Improbable avec 6 paquets mais possible avec 1-2 paquets et plusieurs splits.</p>
+        <h4>Correction suggeree</h4>
+        <p>Verifier le retour de chaque <code>tirer()</code>, ou augmenter le seuil de reinitialisation (ex: <code>&lt; 30</code>) pour couvrir le pire cas.</p>
+    </div>
+</div>
+
+<!-- ============ MAJEUR ============ -->
+<h2 class="section-title">Majeur</h2>
+
+<div class="bug">
+    <div class="bug-header" onclick="this.parentElement.classList.toggle('open')">
+        <span class="badge badge-major">Majeur</span>
+        <span class="bug-title">#3 &mdash; Attribut de classe <code>rang</code> masque par l'attribut d'instance</span>
+        <span class="bug-file">carte.py</span>
+        <span class="chevron">&#9654;</span>
+    </div>
+    <div class="bug-body">
+        <h4>Fichier &amp; lignes</h4>
+        <p><code>src/models/carte.py</code> &mdash; lignes 6, 9</p>
+        <h4>Description</h4>
+        <p>La classe a <code>rang = ["2", "3", ...]</code> comme attribut de classe (ligne 6) et <code>self.rang = rang</code> dans <code>__init__</code> (ligne 9). Apres instanciation, <code>instance.rang</code> retourne la string (ex: <code>"K"</code>), pas la liste. Si du code itere sur <code>some_carte.rang</code> en attendant la liste de classe, il itere sur les caracteres de la string.</p>
+        <h4>Declencheur</h4>
+        <p>Tout code qui accede a <code>.rang</code> sur une instance en attendant la liste.</p>
+        <h4>Correction suggeree</h4>
+        <p>Renommer l'attribut de classe en <code>RANGS</code> pour eviter le masquage.</p>
+    </div>
+</div>
+
+<div class="bug">
+    <div class="bug-header" onclick="this.parentElement.classList.toggle('open')">
+        <span class="badge badge-major">Majeur</span>
+        <span class="bug-title">#4 &mdash; <code>retirer_carte()</code> ne met pas a jour le <code>running_count</code></span>
+        <span class="bug-file">sabot.py</span>
+        <span class="chevron">&#9654;</span>
+    </div>
+    <div class="bug-body">
+        <h4>Fichier &amp; lignes</h4>
+        <p><code>src/models/sabot.py</code> &mdash; lignes 56-64</p>
+        <h4>Description</h4>
+        <p>Quand <code>retirer_carte()</code> retire une carte du sabot, le <code>running_count</code> n'est pas mis a jour avec la valeur Hi-Lo de cette carte. Le comptage devient donc inexact apres tout retrait via cette methode.</p>
+        <h4>Declencheur</h4>
+        <p>Appele par <code>retirer_cartes()</code> (ligne 66-69), pas utilise dans le flux principal mais pourrait l'etre dans les calculs de probabilite ou futures fonctionnalites.</p>
+        <h4>Correction suggeree</h4>
+        <p>Ajouter <code>self.running_count += carte.valeur_hilo()</code> apres le pop.</p>
+    </div>
+</div>
+
+<div class="bug">
+    <div class="bug-header" onclick="this.parentElement.classList.toggle('open')">
+        <span class="badge badge-major">Majeur</span>
+        <span class="bug-title">#6 &mdash; Race condition : threads de workers orphelins sur clics rapides</span>
+        <span class="bug-file">worker_probas.py / controleur_jeu.py</span>
+        <span class="chevron">&#9654;</span>
+    </div>
+    <div class="bug-body">
+        <h4>Fichier &amp; lignes</h4>
+        <p><code>src/controllers/workers/worker_probas.py</code> &mdash; lignes 17-19<br>
+        <code>src/controllers/controleur_jeu.py</code> &mdash; ligne 243</p>
+        <h4>Description</h4>
+        <p>Quand le joueur clique rapidement (hit, hit, hit), un nouveau worker est cree a chaque fois. L'ancien worker continue de tourner en arriere-plan. Le <code>_id_calcul_probas</code> protege contre les resultats obsoletes, mais les threads orphelins font du Monte Carlo lourd, causant du lag UI et de la pression memoire.</p>
+        <h4>Declencheur</h4>
+        <p>Clics rapides sur Hit/Stand pendant le jeu.</p>
+        <h4>Correction suggeree</h4>
+        <p>Verifier si l'ancien worker tourne encore et le marquer pour arret anticipe (flag <code>_cancelled</code> dans les boucles de simulation).</p>
+    </div>
+</div>
+
+<div class="bug">
+    <div class="bug-header" onclick="this.parentElement.classList.toggle('open')">
+        <span class="badge badge-major">Majeur</span>
+        <span class="bug-title">#7 &mdash; Mode entrainement bloque le UI avec calcul synchrone</span>
+        <span class="bug-file">controleur_jeu.py</span>
+        <span class="chevron">&#9654;</span>
+    </div>
+    <div class="bug-body">
+        <h4>Fichier &amp; lignes</h4>
+        <p><code>src/controllers/controleur_jeu.py</code> &mdash; lignes 304-332</p>
+        <h4>Description</h4>
+        <p><code>_verifier_decision_mathematique()</code> appelle <code>CalculateurProbabilites.resume_spot()</code> de maniere synchrone sur le thread principal avec 1000 simulations Monte Carlo. L'interface gele pendant plusieurs centaines de millisecondes a plusieurs secondes.</p>
+        <h4>Declencheur</h4>
+        <p>Activer le mode entrainement, puis cliquer Hit ou Stand.</p>
+        <h4>Correction suggeree</h4>
+        <p>Executer le calcul dans un worker thread, ou reutiliser la recommandation du worker asynchrone deja en cours.</p>
+    </div>
+</div>
+
+<div class="bug">
+    <div class="bug-header" onclick="this.parentElement.classList.toggle('open')">
+        <span class="badge badge-major">Majeur</span>
+        <span class="bug-title">#8 &mdash; <code>mode_entrainement</code> absent de <code>DEFAUTS</code>, perdu au reset</span>
+        <span class="bug-file">settings.py / controleur_jeu.py</span>
+        <span class="chevron">&#9654;</span>
+    </div>
+    <div class="bug-body">
+        <h4>Fichier &amp; lignes</h4>
+        <p><code>src/models/settings.py</code> &mdash; lignes 9-14<br>
+        <code>src/controllers/controleur_jeu.py</code> &mdash; lignes 50, 159</p>
+        <h4>Description</h4>
+        <p>La cle <code>mode_entrainement</code> n'est pas declaree dans <code>Settings.DEFAUTS</code>. <code>settings.get("mode_entrainement")</code> retourne <code>None</code>. Le reglage ne survit pas a un <code>settings.reset()</code> : la cle est completement effacee mais la checkbox UI garde l'ancien etat.</p>
+        <h4>Declencheur</h4>
+        <p>Activer le mode entrainement, puis reinitialiser les parametres.</p>
+        <h4>Correction suggeree</h4>
+        <p>Ajouter <code>"mode_entrainement": False</code> a <code>DEFAUTS</code>.</p>
+    </div>
+</div>
+
+<div class="bug">
+    <div class="bug-header" onclick="this.parentElement.classList.toggle('open')">
+        <span class="badge badge-major">Majeur</span>
+        <span class="bug-title">#9 &mdash; Changer <code>nb_paquets</code> ne met pas a jour le sabot en cours</span>
+        <span class="bug-file">vue_parametres.py / main.py</span>
+        <span class="chevron">&#9654;</span>
+    </div>
+    <div class="bug-body">
+        <h4>Fichier &amp; lignes</h4>
+        <p><code>src/views/vue_parametres.py</code> &mdash; lignes 70-72<br>
+        <code>main.py</code> &mdash; lignes 75-77</p>
+        <h4>Description</h4>
+        <p>Quand l'utilisateur change <code>nb_paquets</code> dans le spinner, c'est ecrit dans les settings mais le <code>jeu.sabot</code> n'est PAS mis a jour. Le sabot n'est recree que quand <code>aller_jouer()</code> est appele. Si le changement est fait depuis l'ecran de jeu, il n'a aucun effet jusqu'au retour au menu.</p>
+        <h4>Declencheur</h4>
+        <p>Changer le nombre de paquets depuis les parametres pendant une partie.</p>
+        <h4>Correction suggeree</h4>
+        <p>Desactiver le changement pendant une partie, ou recreer le sabot au retour des parametres.</p>
+    </div>
+</div>
+
+<div class="bug">
+    <div class="bug-header" onclick="this.parentElement.classList.toggle('open')">
+        <span class="badge badge-major">Majeur</span>
+        <span class="bug-title">#11 &mdash; Double/Split ignorent la verification du mode entrainement</span>
+        <span class="bug-file">controleur_jeu.py</span>
+        <span class="chevron">&#9654;</span>
+    </div>
+    <div class="bug-body">
+        <h4>Fichier &amp; lignes</h4>
+        <p><code>src/controllers/controleur_jeu.py</code> &mdash; lignes 81-119</p>
+        <h4>Description</h4>
+        <p><code>action_double()</code> ne verifie PAS <code>mode_entrainement</code> comme <code>action_hit()</code> et <code>action_stand()</code> le font. Un joueur en mode entrainement peut doubler et splitter sans etre valide contre la strategie optimale.</p>
+        <h4>Declencheur</h4>
+        <p>Activer le mode entrainement, puis cliquer Double ou Split.</p>
+        <h4>Correction suggeree</h4>
+        <p>Ajouter la meme verification <code>_verifier_decision_mathematique</code> dans <code>action_double()</code> et <code>action_split()</code>.</p>
+    </div>
+</div>
+
+<div class="bug">
+    <div class="bug-header" onclick="this.parentElement.classList.toggle('open')">
+        <span class="badge badge-major">Majeur</span>
+        <span class="bug-title">#12 &mdash; La recommandation ne suggere jamais DOUBLE ou SPLIT</span>
+        <span class="bug-file">probabilites.py</span>
+        <span class="chevron">&#9654;</span>
+    </div>
+    <div class="bug-body">
+        <h4>Fichier &amp; lignes</h4>
+        <p><code>src/models/probabilites.py</code> &mdash; ligne 260</p>
+        <h4>Description</h4>
+        <p><code>resume_spot()</code> retourne <code>"HIT"</code> ou <code>"STAND"</code> uniquement. La strategie optimale devrait aussi considerer DOUBLE et SPLIT. Le code ne recommande jamais ces actions meme quand elles sont mathematiquement correctes (ex: 11 vs dealer 6, paire de 8).</p>
+        <h4>Declencheur</h4>
+        <p>Toute main ou doubler ou splitter est le jeu optimal.</p>
+        <h4>Correction suggeree</h4>
+        <p>Calculer l'EV pour double (une carte, paiement double) et split, puis comparer toutes les options.</p>
+    </div>
+</div>
+
+<!-- ============ MINEUR ============ -->
+<h2 class="section-title">Mineur</h2>
+
+<div class="bug">
+    <div class="bug-header" onclick="this.parentElement.classList.toggle('open')">
+        <span class="badge badge-minor">Mineur</span>
+        <span class="bug-title">#2 &mdash; Troncature <code>int()</code> sur le paiement Blackjack pour mises impaires</span>
+        <span class="bug-file">jeu.py</span>
+        <span class="chevron">&#9654;</span>
+    </div>
+    <div class="bug-body">
+        <h4>Fichier &amp; lignes</h4>
+        <p><code>src/models/jeu.py</code> &mdash; ligne 116</p>
+        <h4>Description</h4>
+        <p><code>gain = main.mise + int(main.mise * 1.5)</code> utilise <code>int()</code> qui tronque. Pour mise=101: <code>101 + int(151.5) = 252</code> au lieu de 252.5. Non declenche actuellement car les jetons sont en multiples de 100.</p>
+        <h4>Correction suggeree</h4>
+        <p>Utiliser <code>main.mise * 5 // 2</code> ou <code>round()</code>.</p>
+    </div>
+</div>
+
+<div class="bug">
+    <div class="bug-header" onclick="this.parentElement.classList.toggle('open')">
+        <span class="badge badge-minor">Mineur</span>
+        <span class="bug-title">#14 &mdash; Les egalites comptees comme pertes dans le Monte Carlo</span>
+        <span class="bug-file">probabilites.py</span>
+        <span class="chevron">&#9654;</span>
+    </div>
+    <div class="bug-body">
+        <h4>Fichier &amp; lignes</h4>
+        <p><code>src/models/probabilites.py</code> &mdash; lignes 370-374</p>
+        <h4>Description</h4>
+        <p>La simulation Monte Carlo ne compte que les victoires strictes. Les egalites (push) sont comptees comme des non-victoires, donc le "% de victoire" affiche est sous-estime. Le label dit "(Gagner)" donc c'est techniquement correct mais potentiellement trompeur.</p>
+        <h4>Correction suggeree</h4>
+        <p>Reporter victoire/egalite/defaite separement, ou clarifier dans l'UI.</p>
+    </div>
+</div>
+
+<div class="bug">
+    <div class="bug-header" onclick="this.parentElement.classList.toggle('open')">
+        <span class="badge badge-minor">Mineur</span>
+        <span class="bug-title">#15 &mdash; Fuite de descripteur fichier si exception dans <code>setSource()</code></span>
+        <span class="bug-file">audio.py</span>
+        <span class="chevron">&#9654;</span>
+    </div>
+    <div class="bug-body">
+        <h4>Fichier &amp; lignes</h4>
+        <p><code>src/models/audio.py</code> &mdash; lignes 30-36</p>
+        <h4>Description</h4>
+        <p>Le bloc de suppression stderr (<code>os.open</code>, <code>os.dup</code>, <code>os.dup2</code>, <code>os.close</code>) n'est pas dans un <code>try/finally</code>. Si <code>setSource()</code> lance une exception, les descripteurs ne seront pas fermes et stderr restera redirige.</p>
+        <h4>Correction suggeree</h4>
+        <p>Envelopper dans <code>try/finally</code> pour toujours restaurer stderr.</p>
+    </div>
+</div>
+
+<div class="bug">
+    <div class="bug-header" onclick="this.parentElement.classList.toggle('open')">
+        <span class="badge badge-minor">Mineur</span>
+        <span class="bug-title">#16 &mdash; Chemin relatif pour les images de cartes</span>
+        <span class="bug-file">carte.py</span>
+        <span class="chevron">&#9654;</span>
+    </div>
+    <div class="bug-body">
+        <h4>Fichier &amp; lignes</h4>
+        <p><code>src/models/carte.py</code> &mdash; ligne 46</p>
+        <h4>Description</h4>
+        <p><code>os.path.join("cartes", ...)</code> retourne un chemin relatif. Ne fonctionne que si le CWD est la racine du projet. Si l'app est lancee depuis un autre dossier, les images ne chargent pas et <code>CarteWidget</code> tombe en mode texte.</p>
+        <h4>Correction suggeree</h4>
+        <p>Utiliser <code>Path(__file__).resolve().parent.parent / "cartes"</code>.</p>
+    </div>
+</div>
+
+<div class="bug">
+    <div class="bug-header" onclick="this.parentElement.classList.toggle('open')">
+        <span class="badge badge-minor">Mineur</span>
+        <span class="bug-title">#17 &mdash; Chemins relatifs pour les logos</span>
+        <span class="bug-file">app_window.py / menu_principal.py</span>
+        <span class="chevron">&#9654;</span>
+    </div>
+    <div class="bug-body">
+        <h4>Fichier &amp; lignes</h4>
+        <p><code>src/views/app_window.py</code> &mdash; ligne 17<br>
+        <code>src/views/menu_principal.py</code> &mdash; ligne 21</p>
+        <h4>Description</h4>
+        <p>Meme probleme que #16 : <code>QIcon("logo/SJlogo.png")</code> et <code>QPixmap('logo/StatJack(2).png')</code> utilisent des chemins relatifs. Echoue silencieusement si le CWD n'est pas la racine du projet.</p>
+        <h4>Correction suggeree</h4>
+        <p>Utiliser des chemins absolus bases sur <code>__file__</code>.</p>
+    </div>
+</div>
+
+<div class="bug">
+    <div class="bug-header" onclick="this.parentElement.classList.toggle('open')">
+        <span class="badge badge-minor">Mineur</span>
+        <span class="bug-title">#19 &mdash; EV ne distingue pas BJ dealer vs dealer 21</span>
+        <span class="bug-file">probabilites.py</span>
+        <span class="chevron">&#9654;</span>
+    </div>
+    <div class="bug-body">
+        <h4>Fichier &amp; lignes</h4>
+        <p><code>src/models/probabilites.py</code> &mdash; lignes 147-155</p>
+        <h4>Description</h4>
+        <p>Le calcul de <code>ev_stand</code> ne distingue pas un Blackjack dealer (21 naturel en 2 cartes) d'un 21 normal. Le dealer BJ devrait battre un joueur a 21 (non-BJ), mais ici c'est traite comme une egalite.</p>
+        <h4>Declencheur</h4>
+        <p>Joueur a 21 (non-BJ), dealer obtient un Blackjack en simulation.</p>
+        <h4>Correction suggeree</h4>
+        <p>Tracker le BJ dealer comme resultat separe et le traiter dans <code>ev_stand</code>.</p>
+    </div>
+</div>
+
+<div class="bug">
+    <div class="bug-header" onclick="this.parentElement.classList.toggle('open')">
+        <span class="badge badge-minor">Mineur</span>
+        <span class="bug-title">#20 &mdash; Comparaison par sous-chaine pour la recommandation</span>
+        <span class="bug-file">controleur_jeu.py</span>
+        <span class="chevron">&#9654;</span>
+    </div>
+    <div class="bug-body">
+        <h4>Fichier &amp; lignes</h4>
+        <p><code>src/controllers/controleur_jeu.py</code> &mdash; ligne 325</p>
+        <h4>Description</h4>
+        <p><code>action_choisie.lower() not in reco_optimale.lower()</code> utilise <code>in</code> (sous-chaine). Fragile si de futures recommandations contiennent des noms similaires (ex: <code>"hit" in "hit_soft"</code>).</p>
+        <h4>Correction suggeree</h4>
+        <p>Utiliser <code>==</code> : <code>action_choisie.lower() != reco_optimale.lower()</code>.</p>
+    </div>
+</div>
+
+<div class="bug">
+    <div class="bug-header" onclick="this.parentElement.classList.toggle('open')">
+        <span class="badge badge-minor">Mineur</span>
+        <span class="bug-title">#23 &mdash; Pas de verification de bornes dans <code>_on_action</code> du tutoriel</span>
+        <span class="bug-file">controleur_tutoriel.py</span>
+        <span class="chevron">&#9654;</span>
+    </div>
+    <div class="bug-body">
+        <h4>Fichier &amp; lignes</h4>
+        <p><code>src/controllers/controleur_tutoriel.py</code> &mdash; ligne 152</p>
+        <h4>Description</h4>
+        <p><code>_on_action()</code> accede a <code>ETAPES[self.etape_courante]</code> sans verifier les bornes. Si appele apres la derniere etape, <code>IndexError</code>.</p>
+        <h4>Correction suggeree</h4>
+        <p>Ajouter <code>if self.etape_courante >= len(ETAPES): return</code>.</p>
+    </div>
+</div>
+
+<div class="bug">
+    <div class="bug-header" onclick="this.parentElement.classList.toggle('open')">
+        <span class="badge badge-minor">Mineur</span>
+        <span class="bug-title">#24 &mdash; Split d'As permet de continuer a jouer (non-standard)</span>
+        <span class="bug-file">jeu.py</span>
+        <span class="chevron">&#9654;</span>
+    </div>
+    <div class="bug-body">
+        <h4>Fichier &amp; lignes</h4>
+        <p><code>src/models/jeu.py</code> &mdash; lignes 65-82</p>
+        <h4>Description</h4>
+        <p>En Blackjack standard, chaque main d'As splittee ne recoit qu'une seule carte supplementaire. L'implementation actuelle distribue une carte puis permet au joueur de continuer a tirer normalement.</p>
+        <h4>Correction suggeree</h4>
+        <p>Ajouter un flag <code>peut_hit</code> a <code>MainJoueur</code> mis a <code>False</code> apres un split d'As.</p>
+    </div>
+</div>
+
+<div class="bug">
+    <div class="bug-header" onclick="this.parentElement.classList.toggle('open')">
+        <span class="badge badge-minor">Mineur</span>
+        <span class="bug-title">#28 &mdash; Le dealer tire meme quand toutes les mains ont bust</span>
+        <span class="bug-file">jeu.py</span>
+        <span class="chevron">&#9654;</span>
+    </div>
+    <div class="bug-body">
+        <h4>Fichier &amp; lignes</h4>
+        <p><code>src/models/jeu.py</code> &mdash; lignes 97-100</p>
+        <h4>Description</h4>
+        <p><code>calculer_resultats()</code> appelle toujours <code>tour_du_dealer()</code>, meme si chaque main du joueur a bust. Le resultat reste correct mais visuellement le dealer tire des cartes inutilement.</p>
+        <h4>Correction suggeree</h4>
+        <p>Verifier si toutes les mains sont bustees avant <code>tour_du_dealer()</code>.</p>
+    </div>
+</div>
+
+<div class="bug">
+    <div class="bug-header" onclick="this.parentElement.classList.toggle('open')">
+        <span class="badge badge-minor">Mineur</span>
+        <span class="bug-title">#29 &mdash; Carte cachee re-ajoutee sans ajustement du comptage</span>
+        <span class="bug-file">probabilites.py</span>
+        <span class="chevron">&#9654;</span>
+    </div>
+    <div class="bug-body">
+        <h4>Fichier &amp; lignes</h4>
+        <p><code>src/models/probabilites.py</code> &mdash; lignes 8-16</p>
+        <h4>Description</h4>
+        <p>Le sabot clone a deja le <code>running_count</code> mis a jour pour la carte cachee (puisque <code>tirer()</code> l'a modifie). Quand la carte est re-ajoutee a <code>s.cartes</code>, le comptage est maintenant incoherent.</p>
+        <h4>Correction suggeree</h4>
+        <p>Soustraire la valeur Hi-Lo de la carte : <code>s.running_count -= dealer_hole_card.valeur_hilo()</code>.</p>
+    </div>
+</div>
+
+<div class="bug">
+    <div class="bug-header" onclick="this.parentElement.classList.toggle('open')">
+        <span class="badge badge-minor">Mineur</span>
+        <span class="bug-title">#30 &mdash; Monte Carlo Double ne reflete pas le paiement double</span>
+        <span class="bug-file">probabilites.py</span>
+        <span class="chevron">&#9654;</span>
+    </div>
+    <div class="bug-body">
+        <h4>Fichier &amp; lignes</h4>
+        <p><code>src/models/probabilites.py</code> &mdash; lignes 328-377</p>
+        <h4>Description</h4>
+        <p>La simulation "Double" du Monte Carlo traite comme un simple Hit (une carte, puis comparaison). Le % de victoire n'integre pas le paiement double, ce qui est trompeur dans les stats de la sidebar.</p>
+        <h4>Correction suggeree</h4>
+        <p>Calculer des valeurs ajustees a l'EV, ou clarifier dans l'UI que c'est un % de frequence.</p>
+    </div>
+</div>
+
+<!-- ============ COSMETIQUE ============ -->
+<h2 class="section-title">Cosmetique</h2>
+
+<div class="bug">
+    <div class="bug-header" onclick="this.parentElement.classList.toggle('open')">
+        <span class="badge badge-cosmetic">Cosmetique</span>
+        <span class="bug-title">#10 &mdash; Code mort dans <code>closeEvent</code></span>
+        <span class="bug-file">app_window.py</span>
+        <span class="chevron">&#9654;</span>
+    </div>
+    <div class="bug-body">
+        <h4>Fichier &amp; lignes</h4>
+        <p><code>src/views/app_window.py</code> &mdash; lignes 28-31</p>
+        <h4>Description</h4>
+        <p><code>closeEvent</code> verifie <code>hasattr(self, "audio_manager")</code>, mais cet attribut n'est jamais defini sur <code>AppWindow</code>. Le cleanup est gere par <code>app.aboutToQuit</code> dans <code>AudioManager.__init__</code>. Code mort.</p>
+    </div>
+</div>
+
+<div class="bug">
+    <div class="bug-header" onclick="this.parentElement.classList.toggle('open')">
+        <span class="badge badge-cosmetic">Cosmetique</span>
+        <span class="bug-title">#18 &mdash; Animation flash peut s'empiler sur appels rapides</span>
+        <span class="bug-file">vue_jeu.py</span>
+        <span class="chevron">&#9654;</span>
+    </div>
+    <div class="bug-body">
+        <h4>Fichier &amp; lignes</h4>
+        <p><code>src/views/vue_jeu.py</code> &mdash; lignes 618-637</p>
+        <h4>Description</h4>
+        <p><code>QTimer.singleShot</code> cree des timers independants. Si <code>_flash_label</code> est appele plusieurs fois rapidement, les timers se chevauchent et causent des glitches visuels.</p>
+    </div>
+</div>
+
+<div class="bug">
+    <div class="bug-header" onclick="this.parentElement.classList.toggle('open')">
+        <span class="badge badge-cosmetic">Cosmetique</span>
+        <span class="bug-title">#25 &mdash; Le controleur accede aux methodes privees de la vue</span>
+        <span class="bug-file">controleur_jeu.py</span>
+        <span class="chevron">&#9654;</span>
+    </div>
+    <div class="bug-body">
+        <h4>Fichier &amp; lignes</h4>
+        <p><code>src/controllers/controleur_jeu.py</code> &mdash; lignes 150, 298-299</p>
+        <h4>Description</h4>
+        <p><code>self.vue._reset_mises()</code> et <code>self.vue._vider_layout(...)</code> accedent a des methodes privees de la vue depuis le controleur. Violation MVC, pas un bug runtime.</p>
+    </div>
+</div>
+
+<footer>
+    Rapport genere par Claude Code &mdash; 6 mai 2026
+</footer>
+
+<script>
+// Ouvrir le premier bug (critique) par defaut
+document.querySelector('.bug')?.classList.add('open');
+</script>
+
+</body>
+</html>
