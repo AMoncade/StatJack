@@ -855,8 +855,9 @@ class VueJeu(QWidget):
         msg_box.setInformativeText("Voulez-vous corriger votre action ou continuer malgré tout ?")
 
         btn_corriger = msg_box.addButton("Corriger", QMessageBox.AcceptRole)
-        btn_continuer = msg_box.addButton("Continuer quand même", QMessageBox.RejectRole)
+        btn_continuer = msg_box.addButton("Continuer quand même", QMessageBox.ActionRole)
         msg_box.setDefaultButton(btn_corriger)
+        msg_box.setEscapeButton(btn_corriger)
 
         msg_box.setStyleSheet("""
             QMessageBox { background-color: #1a1a2e; color: white; }
