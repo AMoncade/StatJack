@@ -40,7 +40,7 @@ class VueParametres(QWidget):
 
         layout.addSpacing(10)
 
-        self.check_entrainement = QCheckBox("Mode Entraînement (Interception)")
+        self.check_entrainement = QCheckBox("Mode Entraînement (Hit/Stand seulement)")
         self.check_entrainement.setStyleSheet(style_check)
 
         mode_actif = self.settings.get("mode_entrainement") if self.settings.get(

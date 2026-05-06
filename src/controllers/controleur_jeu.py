@@ -203,8 +203,13 @@ class ControleurJeu:
 
             self.vue.btn_hit.setEnabled(peut_jouer)
             self.vue.btn_stand.setEnabled(peut_jouer)
-            self.vue.activer_double(peut_jouer and self.jeu.joueur.peut_double())
-            self.vue.activer_split(peut_jouer and self.jeu.joueur.peut_split())
+
+            if mode_actif:
+                self.vue.activer_double(False)
+                self.vue.activer_split(False)
+            else:
+                self.vue.activer_double(peut_jouer and self.jeu.joueur.peut_double())
+                self.vue.activer_split(peut_jouer and self.jeu.joueur.peut_split())
         else:
             self.vue.btn_hit.setEnabled(False)
             self.vue.btn_stand.setEnabled(False)
