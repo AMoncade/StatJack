@@ -18,6 +18,7 @@ Ce projet valide les axes de formation suivants :
 * **Probabilités et Statistiques :** Implémentation de calculs de probabilités conditionnelles en temps réel (dépendance des cartes restantes dans le sabot).
 * **Analyse de Données :** Utilisation de la méthode de Monte Carlo pour simuler des milliers de mains et calculer l'Espérance de Gain (EV).
 * **Logique :** Traduction de tableaux de décision (Basic Strategy) en algorithmes.
+* **Recommandation :** Les recommandations HIT/STAND sont basées sur un calcul récursif d’espérance mathématique tandis que les statistiques Monte Carlo servent principalement d’outil visuel et pédagogique.
 
 ### 2. Axe Développement Logiciel (Python)
 * **Programmation Orientée Objet (POO) :** Architecture modulaire avec des classes distinctes (`Sabot`, `Main`, `Simulateur`, `Stratégie`).
