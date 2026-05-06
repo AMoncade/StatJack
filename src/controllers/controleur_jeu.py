@@ -331,10 +331,10 @@ class ControleurJeu:
         reco_optimale = self._derniere_reco
 
         if action_choisie.lower() not in reco_optimale.lower():
-            self.vue.afficher_avertissement_entrainement(
+            forcer = self.vue.afficher_avertissement_entrainement(
                 action_joueur=action_choisie,
                 action_optimale=reco_optimale
             )
-            return False
+            return forcer
 
         return True
