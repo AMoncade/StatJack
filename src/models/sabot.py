@@ -64,6 +64,7 @@ class Sabot:
             return False
 
         self.cartes.pop(idx)
+        self.running_count += carte.valeur_hilo()
         return True
 
     def retirer_cartes(self, cartes):
