@@ -85,9 +85,6 @@ class ControleurJeu:
             return
         if not self.jeu.joueur.peut_double():
             return
-        if self.settings.get("mode_entrainement"):
-            if not self._verifier_decision_mathematique("Double"):
-                return
         carte = self.jeu.joueur_double()
         if carte is None:
             return
@@ -108,9 +105,6 @@ class ControleurJeu:
             return
         if not self.jeu.joueur.peut_split():
             return
-        if self.settings.get("mode_entrainement"):
-            if not self._verifier_decision_mathematique("Split"):
-                return
         if not self.jeu.joueur_split():
             return
         self.audio.jouer_son_hit()
