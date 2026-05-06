@@ -77,7 +77,7 @@ class ControleurJeu:
         carte = self.jeu.joueur_double()
         if carte is None:
             return
-        self.audio.jouer_son_carte()
+        self.audio.jouer_son_hit()
 
         if self.jeu.joueur.est_busted():
             if not self.jeu.passer_main_suivante():
