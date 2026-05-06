@@ -166,7 +166,8 @@ class ControleurJeu:
                         main_joueur=main_active,
                         dealer_upcard=dealer_upcard,
                         sabot=self.jeu.sabot,
-                        nb_simulations_dealer=5000
+                        nb_simulations_dealer=5000,
+                        dealer_hole_card=self.jeu.dealer.cartes[1] if len(self.jeu.dealer.cartes) >= 2 else None
                     )
 
                     pct_bust = spot.get("p_bust_si_hit", 0.0) * 100.0

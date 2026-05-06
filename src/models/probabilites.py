@@ -195,7 +195,7 @@ class CalculateurProbabilites:
         )
 
     @staticmethod
-    def resume_spot(main_joueur, dealer_upcard, sabot, nb_simulations_dealer=5000):
+    def resume_spot(main_joueur, dealer_upcard, sabot, nb_simulations_dealer=5000, dealer_hole_card=None):
 
         sabot_cond = sabot.clone()
 
@@ -208,7 +208,12 @@ class CalculateurProbabilites:
             if total_final != "bust" and t < total_final <= 21:
                 p_ameliorer += prob
 
-        dealer_dist = CalculateurProbabilites.dealer_distribution(sabot_cond, dealer_upcard, nb_simulations_dealer)
+        dealer_dist = CalculateurProbabilites.dealer_distribution(
+            sabot_cond,
+            dealer_upcard,
+            nb_simulations_dealer,
+            dealer_hole_card
+        )
 
         t = main_joueur.valeur_totale()
         ev_stand = CalculateurProbabilites.ev_stand(t, dealer_dist)
