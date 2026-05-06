@@ -73,7 +73,7 @@ src/
 - **Système Hi-Lo** — Comptage de cartes (+1, 0, -1) pour estimer l'avantage du joueur
 - **Loi des grands nombres** — Convergence des gains réels vers l'espérance mathématique
 - **Simulations Monte Carlo** — Estimation empirique des probabilités par milliers de mains simulées
-> 
+> [!NOTE]
 > *Les recommandations HIT/STAND sont basées sur un calcul récursif d’espérance mathématique, tandis que les statistiques Monte Carlo servent principalement d’outil visuel et pédagogique.*
 
 
