@@ -130,7 +130,8 @@ class VueJeu(QWidget):
                 "texte": (
                     "Pourcentage estimé de simulations Monte Carlo où l’action Double "
                     "mène à une victoire.\n\n"
-                    "Une action peut gagner moins souvent tout en ayant une meilleure EV."
+                    "Cette statistique représente une fréquence de victoire simulée "
+                    "et non une valeur attendue complète (EV)."
                 ),
                 "latex": r"\hat{P}(\mathrm{victoire}\mid a)=\frac{\#\mathrm{victoires\ sous}\ a}{N}\times 100",
                 "legende": (

@@ -98,6 +98,9 @@ class ControleurJeu:
         else:
             self.action_stand()
 
+        if self.settings.get("mode_entrainement"):
+            return
+
     def action_split(self):
         if not self.jeu.manche_en_cours:
             return
@@ -117,6 +120,9 @@ class ControleurJeu:
                 self._rafraichir(reveler=False)
         else:
             self._rafraichir(reveler=False)
+
+        if self.settings.get("mode_entrainement"):
+            return
 
     def _finir_manche(self):
         resultats = self.jeu.calculer_resultats()
