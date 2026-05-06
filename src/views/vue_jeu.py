@@ -431,7 +431,7 @@ class VueJeu(QWidget):
 
         # Sidebar probabilités
         self.sidebar = QFrame()
-        self.sidebar.setFixedWidth(220)
+        self.sidebar.setFixedWidth(250)
         self.sidebar.setStyleSheet(
             "background-color: #1a1a2e; border-left: 2px solid #333;"
         )
@@ -914,21 +914,43 @@ class VueJeu(QWidget):
 
         # Affichage des stats Monte Carlo
         if stats_actions:
-            self.lbl_win_stand.setText(f"Stand (Gagner) : {stats_actions.get('Stand', 0):.1f}%")
-            self.lbl_win_hit.setText(f"Hit (Gagner) : {stats_actions.get('Hit', 0):.1f}%")
+            stand = stats_actions.get("Stand")
+            hit = stats_actions.get("Hit")
+            double = stats_actions.get("Double")
 
-            # Griser le Double s'il n'est pas possible
-            if 'Double' in stats_actions:
-                self.lbl_win_double.setText(f"Double (Gagner) : {stats_actions['Double']:.1f}%")
-                self.lbl_win_double.setStyleSheet("font-size: 14px; color: #FFF; padding: 4px;")
+            if stand:
+                self.lbl_win_stand.setText(
+                    f"Stand : {stand['winrate']:.1f}% win | EV {stand['ev']:+.2f}"
+                )
             else:
-                self.lbl_win_double.setText("Double (Gagner) : --")
-                self.lbl_win_double.setStyleSheet("font-size: 14px; color: #555; padding: 4px;")
+                self.lbl_win_stand.setText("Stand : --")
+
+            if hit:
+                self.lbl_win_hit.setText(
+                    f"Hit : {hit['winrate']:.1f}% win | EV {hit['ev']:+.2f}"
+                )
+            else:
+                self.lbl_win_hit.setText("Hit : --")
+
+            if double:
+                self.lbl_win_double.setText(
+                    f"Double : {double['winrate']:.1f}% win | EV {double['ev']:+.2f}"
+                )
+                self.lbl_win_double.setStyleSheet(
+                    "font-size: 14px; color: #FFF; padding: 4px;"
+                )
+            else:
+                self.lbl_win_double.setText("Double : --")
+                self.lbl_win_double.setStyleSheet(
+                    "font-size: 14px; color: #555; padding: 4px;"
+                )
         else:
-            self.lbl_win_stand.setText("Stand (Gagner) : --")
-            self.lbl_win_hit.setText("Hit (Gagner) : --")
-            self.lbl_win_double.setText("Double (Gagner) : --")
-            self.lbl_win_double.setStyleSheet("font-size: 14px; color: #555; padding: 4px;")
+            self.lbl_win_stand.setText("Stand : --")
+            self.lbl_win_hit.setText("Hit : --")
+            self.lbl_win_double.setText("Double : --")
+            self.lbl_win_double.setStyleSheet(
+                "font-size: 14px; color: #555; padding: 4px;"
+            )
 
     def maj_comptage(self, running, true_count, cartes_restantes, total_cartes, avantage):
         self.lbl_running_count.setText(f"Running Count : {running:+d}")
