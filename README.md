@@ -33,7 +33,6 @@ L'objectif n'est pas de créer un jeu de hasard, mais un **outil pédagogique** 
 | Matplotlib | Graphiques de variance et progression |
 | NumPy | Calculs vectoriels et simulations |
 
-
 ## Architecture
 
 Le projet suit le patron **MVC** (Modèle-Vue-Contrôleur) :
