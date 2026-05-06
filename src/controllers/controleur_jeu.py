@@ -75,8 +75,11 @@ class ControleurJeu:
                 return
         if not self.jeu.passer_main_suivante():
             self._finir_manche()
-        else:
-            self._rafraichir(reveler=False)
+            return
+        if self._avancer_mains_non_jouables():
+            return
+
+        self._rafraichir(reveler=False)
 
     def action_double(self):
         if not self.jeu.manche_en_cours:
@@ -110,14 +113,11 @@ class ControleurJeu:
             return
         if not self.jeu.joueur_split():
             return
+
         self.audio.jouer_son_hit()
 
-        while self.jeu.manche_en_cours and (
-                self.jeu.joueur.valeur_totale() >= 21 or self.jeu.joueur.main_fermee
-        ):
-            if not self.jeu.passer_main_suivante():
-                self._finir_manche()
-                return
+        if self._avancer_mains_non_jouables():
+            return
 
         self._rafraichir(reveler=False)
 
@@ -336,3 +336,17 @@ class ControleurJeu:
             return forcer
 
         return True
+
+    def _avancer_mains_non_jouables(self):
+        while (
+                self.jeu.manche_en_cours
+                and (
+                        self.jeu.joueur.valeur_totale() >= 21
+                        or self.jeu.joueur.main_fermee
+                )
+        ):
+            if not self.jeu.passer_main_suivante():
+                self._finir_manche()
+                return True
+
+        return False
