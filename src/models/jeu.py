@@ -64,19 +64,28 @@ class Jeu:
 
     def joueur_split(self):
         main = self.joueur
+
         if not main.peut_split():
             return False
+
         cout = main.mise
         if self.banque and not self.banque.placer_mise(cout):
             return False
 
+        split_as = main.cartes[0].rang == "A"
+
         carte_retiree = main.retirer_carte()
+
         nouvelle_main = MainJoueur()
         nouvelle_main.mise = main.mise
         nouvelle_main.ajouter_carte(carte_retiree)
 
         main.ajouter_carte(self.sabot.tirer())
         nouvelle_main.ajouter_carte(self.sabot.tirer())
+
+        if split_as:
+            main.main_fermee = True
+            nouvelle_main.main_fermee = True
 
         self.mains_joueur.insert(self.index_main_active + 1, nouvelle_main)
         return True

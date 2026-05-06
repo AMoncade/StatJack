@@ -322,33 +322,38 @@ class CalculateurProbabilites:
 
         stats = {}
         actions_possibles = ["Stand", "Hit"]
+
         if main_joueur.peut_double():
             actions_possibles.append("Double")
 
         for action in actions_possibles:
             victoires = 0
+            defaites = 0
+            egalites = 0
+            gain_total = 0.0
 
             for _ in range(nb_simulations):
-                # Cloner l'état du sabot pour simuler une manche réaliste
-                s = CalculateurProbabilites._sabot_vue_joueur(
+                s = CalculateurProbabilites.sabot_vue_joueur(
                     sabot,
                     dealer_hole_card
                 )
                 s.melanger_sans_reset()
 
-                # Recréer la main du joueur à partir de la vraie main actuelle
                 sim_joueur = MainJoueur()
                 for carte in main_joueur.cartes:
                     sim_joueur.ajouter_carte(carte)
 
-                # Le joueur joue son action virtuelle
-                if action == "Hit" or action == "Double":
+                multiplicateur = 2 if action == "Double" else 1
+
+                if action in ("Hit", "Double"):
                     carte_tiree = s.tirer()
                     if carte_tiree is not None:
                         sim_joueur.ajouter_carte(carte_tiree)
 
                 if sim_joueur.est_busted():
-                    continue  # Défaite automatique (Bust)
+                    defaites += 1
+                    gain_total -= 1 * multiplicateur
+                    continue
 
                 sim_dealer = MainJoueur()
                 sim_dealer.ajouter_carte(dealer.cartes[0])
@@ -359,21 +364,40 @@ class CalculateurProbabilites:
 
                 sim_dealer.ajouter_carte(carte_cachee)
 
-                # Le dealer joue (règle: s'arrête à 17)
                 while sim_dealer.valeur_totale() < 17:
                     carte_dealer = s.tirer()
                     if carte_dealer is None:
                         break
                     sim_dealer.ajouter_carte(carte_dealer)
 
-                # Qui gagne ?
                 total_joueur = sim_joueur.valeur_totale()
                 total_dealer = sim_dealer.valeur_totale()
 
                 if total_dealer > 21 or total_joueur > total_dealer:
                     victoires += 1
+                    gain_total += 1 * multiplicateur
+                elif total_joueur < total_dealer:
+                    defaites += 1
+                    gain_total -= 1 * multiplicateur
+                else:
+                    egalites += 1
 
-            # Calcul du pourcentage de victoire
-            stats[action] = (victoires / nb_simulations) * 100
+            stats[action] = {
+                "winrate": (victoires / nb_simulations) * 100,
+                "lossrate": (defaites / nb_simulations) * 100,
+                "pushrate": (egalites / nb_simulations) * 100,
+                "ev": gain_total / nb_simulations,
+            }
 
         return stats
+
+    @staticmethod
+    def sabot_vue_joueur(sabot, dealer_hole_card=None):
+        s = sabot.clone()
+
+        # Si la carte cachée du dealer est déjà connue dans l'état réel,
+        # on la retire du clone pour éviter qu'elle soit repigée.
+        if dealer_hole_card is not None:
+            s.retirer_carte(dealer_hole_card)
+
+        return s

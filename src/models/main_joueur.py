@@ -11,6 +11,7 @@ class MainJoueur:
         self.cartes = []
         self.mise = 0
         self.est_double = False
+        self.main_fermee = False
 
     def ajouter_carte(self, carte):
         # Ajoute une carte à la main
