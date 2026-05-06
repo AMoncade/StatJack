@@ -214,7 +214,11 @@ class ControleurJeu:
         # Activation / désactivation des boutons selon l'état du jeu
         if not reveler and self.jeu.manche_en_cours:
             total = self.jeu.joueur.valeur_totale()
-            peut_jouer = total < 21 and not self.jeu.joueur.est_busted()
+            peut_jouer = (
+                    total < 21
+                    and not self.jeu.joueur.est_busted()
+                    and not self.jeu.joueur.main_fermee
+            )
 
             self.vue.btn_hit.setEnabled(peut_jouer)
             self.vue.btn_stand.setEnabled(peut_jouer)

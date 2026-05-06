@@ -55,8 +55,8 @@ class MainJoueur:
                 and self.cartes[0].valeur_blackjack() == self.cartes[1].valeur_blackjack())
 
     def peut_double(self):
-        # Maximum 2 cartes pour doubler
-        return len(self.cartes) == 2
+        # Le joueur peut doubler seulement avec 2 cartes et si la main n'est pas fermée (ex: split d'as)
+        return len(self.cartes) == 2 and not self.main_fermee
 
     def __str__(self):
         # Afficher main
