@@ -1,5 +1,4 @@
 from src.models.jeu import Jeu
-from src.models.probabilites import CalculateurProbabilites
 from src.views.vue_jeu import VueJeu, PHASE_MISE, PHASE_JEU, PHASE_RESULTAT
 from src.views.widgets.graphe_simulation import GrapheSimulation
 from src.controllers.workers.worker_probas import WorkerProbas
@@ -23,6 +22,7 @@ class ControleurJeu:
 
         self._worker_probas = None
         self._id_calcul_probas = 0
+        self._derniere_reco = None
 
     def action_miser(self, principale):
         if self.jeu.manche_en_cours:
@@ -151,6 +151,7 @@ class ControleurJeu:
             self.audio.jouer_son_defaite()
 
     def prochaine_manche(self):
+        self._derniere_reco = None
         self.vue.set_phase(PHASE_MISE)
         self.vue.label_resultat.setText("")
         self.vue._reset_mises()
@@ -269,6 +270,7 @@ class ControleurJeu:
         ev_stand = spot.get("ev_stand", 0.0)
         ev_opt = spot.get("ev_optimal", 0.0)
         reco = spot.get("recommandation", "--")
+        self._derniere_reco = reco
         edge_pct = (ev_opt - ev_stand) * 100.0
 
         self.vue.maj_probabilites(
@@ -308,25 +310,10 @@ class ControleurJeu:
         self.vue.label_main_active.setText("")
 
     def _verifier_decision_mathematique(self, action_choisie):
-        try:
-            main_active = self.jeu.mains_joueur[self.jeu.index_main_active]
-        except Exception:
-            main_active = self.jeu.joueur
-
-        dealer_upcard = self.jeu.dealer.cartes[0] if self.jeu.dealer.cartes else None
-
-        if dealer_upcard is None:
+        if self._derniere_reco is None:
             return True
 
-        spot = CalculateurProbabilites.resume_spot(
-            main_joueur=main_active,
-            dealer_upcard=dealer_upcard,
-            sabot=self.jeu.sabot,
-            nb_simulations_dealer=1000,
-            dealer_hole_card=self.jeu.dealer.cartes[1] if len(self.jeu.dealer.cartes) >= 2 else None
-        )
-
-        reco_optimale = spot.get("recommandation", "Stand")
+        reco_optimale = self._derniere_reco
 
         if action_choisie.lower() not in reco_optimale.lower():
             self.vue.afficher_avertissement_entrainement(

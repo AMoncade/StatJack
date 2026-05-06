@@ -11,6 +11,7 @@ class Settings:
         "sons": True,
         "nb_paquets": 6,
         "argent": 10000,
+        "mode_entrainement": False,
     }
 
 
