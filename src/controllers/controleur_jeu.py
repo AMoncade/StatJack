@@ -112,17 +112,15 @@ class ControleurJeu:
             return
         self.audio.jouer_son_hit()
 
-        total = self.jeu.joueur.valeur_totale()
-        if total >= 21 or self.jeu.joueur.main_fermee:
+        while self.jeu.manche_en_cours and (
+                self.jeu.joueur.valeur_totale() >= 21 or self.jeu.joueur.main_fermee
+        ):
             if not self.jeu.passer_main_suivante():
                 self._finir_manche()
-            else:
-                self._rafraichir(reveler=False)
-        else:
-            self._rafraichir(reveler=False)
+                return
 
-        if self.settings.get("mode_entrainement"):
-            return
+        self._rafraichir(reveler=False)
+
 
     def _finir_manche(self):
         resultats = self.jeu.calculer_resultats()
