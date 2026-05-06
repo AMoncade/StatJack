@@ -3,7 +3,7 @@ import io
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel,
     QPushButton, QFrame,
-    QToolButton, QDialog, QTextEdit, QSizePolicy
+    QToolButton, QDialog, QTextEdit, QSizePolicy, QMessageBox
 )
 from PySide6.QtCore import Signal, Qt, QTimer
 from PySide6.QtGui import QPixmap, QImage
@@ -841,6 +841,27 @@ class VueJeu(QWidget):
         layout.addLayout(ligne_btn)
 
         dialog.exec()
+
+    def afficher_avertissement_entrainement(self, action_joueur, action_optimale):
+        msg_box = QMessageBox(self)
+        msg_box.setIcon(QMessageBox.Warning)
+        msg_box.setWindowTitle("Mode Entraînement - Erreur Stratégique")
+
+        texte = f"Attention ! Votre choix de <b>{action_joueur.capitalize()}</b> est mathématiquement sous-optimal.<br><br>"
+        texte += f"L'action optimale recommandée par la stratégie de base est : <b>{action_optimale}</b>.<br>"
+
+        msg_box.setText(texte)
+        msg_box.setInformativeText("Veuillez choisir l'action optimale pour continuer.")
+
+        msg_box.setStyleSheet("""
+            QMessageBox { background-color: #1a1a2e; color: white; }
+            QLabel { color: white; font-size: 14px; }
+            QPushButton {
+                background-color: #2d2d44; color: white; border: 1px solid #FFD700;
+                border-radius: 5px; padding: 5px 15px; font-weight: bold;
+            }
+        """)
+        msg_box.exec()
 
     def maj_probabilites(self, pct_bust, edge_pct, pct_ameliorer=0.0, stats_actions=None):
         # Bust %
