@@ -23,6 +23,8 @@ class ControleurJeu:
         self._worker_probas = None
         self._id_calcul_probas = 0
         self._derniere_reco = None
+        self._action_en_attente = None
+        self._ignorer_verification_entrainement = False
 
     def action_miser(self, principale):
         if self.jeu.manche_en_cours:
@@ -47,7 +49,7 @@ class ControleurJeu:
             return
         if self.jeu.joueur.est_busted():
             return
-        if self.settings.get("mode_entrainement"):
+        if self.settings.get("mode_entrainement") and not self._ignorer_verification_entrainement:
             if not self._verifier_decision_mathematique("Hit"):
                 return
         carte = self.jeu.joueur_tire()
@@ -70,7 +72,7 @@ class ControleurJeu:
             return
         if self.jeu.joueur.est_busted():
             return
-        if self.settings.get("mode_entrainement"):
+        if self.settings.get("mode_entrainement") and not self._ignorer_verification_entrainement:
             if not self._verifier_decision_mathematique("Stand"):
                 return
         if not self.jeu.passer_main_suivante():
@@ -249,6 +251,7 @@ class ControleurJeu:
             self.vue.afficher_argent(self.jeu.banque.solde)
 
     def _lancer_calcul_probas(self, main_active):
+        self._derniere_reco = None
         self._id_calcul_probas += 1
 
         worker = WorkerProbas(
@@ -270,7 +273,6 @@ class ControleurJeu:
     def _recevoir_probas(self, id_calcul, resultats):
         if id_calcul != self._id_calcul_probas:
             return
-
         if not resultats:
             self.vue.maj_probabilites(0, 0, 0)
             return
@@ -284,6 +286,7 @@ class ControleurJeu:
         ev_opt = spot.get("ev_optimal", 0.0)
         reco = spot.get("recommandation", "--")
         self._derniere_reco = reco
+
         edge_pct = (ev_opt - ev_stand) * 100.0
 
         self.vue.maj_probabilites(
@@ -292,18 +295,33 @@ class ControleurJeu:
             pct_ameliorer,
             stats_action
         )
-
         self.vue.lbl_reco_ev.setText(
             f"Reco HIT/STAND : {reco}\n"
             f"EV stand : {ev_stand:+.3f}\n"
             f"EV opt : {ev_opt:+.3f}\n"
             f"Edge décision : {edge_pct:+.1f}%"
         )
-
         if hasattr(self.vue, "maj_distribution_hit"):
             self.vue.maj_distribution_hit(
                 spot.get("distribution_total_si_hit", {})
             )
+
+        if self.settings.get("mode_entrainement"):
+            self.vue.label_resultat.setText("")
+
+        if self._action_en_attente is not None:
+            action = self._action_en_attente
+            self._action_en_attente = None
+
+            if self._verifier_decision_mathematique(action):
+                self._ignorer_verification_entrainement = True
+
+                if action == "Hit":
+                    self.action_hit()
+                elif action == "Stand":
+                    self.action_stand()
+
+                self._ignorer_verification_entrainement = False
 
     def _erreur_probas(self, id_calcul, message):
         if id_calcul != self._id_calcul_probas:
@@ -324,17 +342,17 @@ class ControleurJeu:
 
     def _verifier_decision_mathematique(self, action_choisie):
         if self._derniere_reco is None:
-            return True
+            self._action_en_attente = action_choisie
+            self.vue.label_resultat.setText("Calcul de la recommandation en cours...")
+            return False
 
         reco_optimale = self._derniere_reco
 
         if action_choisie.lower() not in reco_optimale.lower():
-            forcer = self.vue.afficher_avertissement_entrainement(
+            return self.vue.afficher_avertissement_entrainement(
                 action_joueur=action_choisie,
                 action_optimale=reco_optimale
             )
-            return forcer
-
         return True
 
     def _avancer_mains_non_jouables(self):
