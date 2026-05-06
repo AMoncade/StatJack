@@ -336,7 +336,7 @@ class CalculateurProbabilites:
             gain_total = 0.0
 
             for _ in range(nb_simulations):
-                s = CalculateurProbabilites.sabot_vue_joueur(
+                s = CalculateurProbabilites._sabot_vue_joueur(
                     sabot,
                     dealer_hole_card
                 )
@@ -393,14 +393,3 @@ class CalculateurProbabilites:
             }
 
         return stats
-
-    @staticmethod
-    def sabot_vue_joueur(sabot, dealer_hole_card=None):
-        s = sabot.clone()
-
-        # Si la carte cachée du dealer est déjà connue dans l'état réel,
-        # on la retire du clone pour éviter qu'elle soit repigée.
-        if dealer_hole_card is not None:
-            s.retirer_carte(dealer_hole_card)
-
-        return s
