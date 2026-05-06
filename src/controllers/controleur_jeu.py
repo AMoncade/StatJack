@@ -114,7 +114,15 @@ class ControleurJeu:
         if not self.jeu.joueur_split():
             return
         self.audio.jouer_son_hit()
-        self._rafraichir(reveler=False)
+
+        total = self.jeu.joueur.valeur_totale()
+        if total >= 21:
+            if not self.jeu.passer_main_suivante():
+                self._finir_manche()
+            else:
+                self._rafraichir(reveler=False)
+        else:
+            self._rafraichir(reveler=False)
 
     def _finir_manche(self):
         resultats = self.jeu.calculer_resultats()
