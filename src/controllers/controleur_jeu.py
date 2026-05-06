@@ -96,7 +96,7 @@ class ControleurJeu:
             return
         if not self.jeu.joueur_split():
             return
-        self.audio.jouer_son_carte()
+        self.audio.jouer_son_hit()
         self._rafraichir(reveler=False)
 
     def _finir_manche(self):
