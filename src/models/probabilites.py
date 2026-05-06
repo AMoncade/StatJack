@@ -1,10 +1,19 @@
-from src.models.main_joueur import MainJoueur
 from collections import Counter
-import random
-import copy
+from src.models.main_joueur import MainJoueur
 
 
 class CalculateurProbabilites:
+
+    @staticmethod
+    def _sabot_vue_joueur(sabot, dealer_hole_card=None):
+        s = sabot.clone()
+
+        # Casino réaliste :
+        # On remet la vraie hole card dans le sabot simulé pour qu'elle redevienne une possibilité inconnue
+        if dealer_hole_card is not None:
+            s.cartes.append(dealer_hole_card)
+
+        return s
 
     @staticmethod
     def _total_apres_ajout(main_joueur, valeur, est_as=False):
@@ -43,6 +52,17 @@ class CalculateurProbabilites:
             soft_aces -= 1
 
         return total, soft_aces
+
+    @staticmethod
+    def _etat_apres_valeur(total, soft_aces, valeur):
+        new_total = total + valeur
+        new_soft = soft_aces + (1 if valeur == 11 else 0)
+
+        while new_total > 21 and new_soft > 0:
+            new_total -= 10
+            new_soft -= 1
+
+        return new_total, new_soft
 
     @staticmethod
     def total_avec_carte(main_joueur, carte):
@@ -94,25 +114,22 @@ class CalculateurProbabilites:
         return {v: count / cartes_restantes for v, count in sorted(compteur.items())}
 
     @staticmethod
-    def dealer_distribution(sabot, dealer_upcard, nb_simulations=5000, dealer_hole_card=None):
+    def dealer_distribution(sabot, dealer_upcard, nb_simulations=5000):
         outcomes = Counter()
 
         for _ in range(nb_simulations):
             s = sabot.clone()
-
             # Simulation aléatoire
             s.melanger_sans_reset()
 
             main_d = MainJoueur()
             main_d.ajouter_carte(dealer_upcard)
 
-            if dealer_hole_card is not None:
-                main_d.ajouter_carte(dealer_hole_card)
-            else:
-                carte_cachee = s.tirer()
-                if carte_cachee is None:
-                    continue
-                main_d.ajouter_carte(carte_cachee)
+            carte_cachee = s.tirer()
+            if carte_cachee is None:
+                continue
+
+            main_d.ajouter_carte(carte_cachee)
 
             while main_d.valeur_totale() < 17:
                 carte = s.tirer()
@@ -150,36 +167,59 @@ class CalculateurProbabilites:
         return ev
 
     @staticmethod
-    def ev_hit_recursive(total, soft_aces, dealer_dist, dist_valeurs, memo=None):
-        # Calcul EV optimal pour hit
+    def ev_hit_recursive_counts(total, soft_aces, counts, dealer_dist, memo=None):
         if memo is None:
             memo = {}
 
-        # Bust
         if total > 21:
             return -1.0
 
-        key = (total, soft_aces)
+        key = (
+            total,
+            soft_aces,
+            tuple(sorted(counts.items()))
+        )
+
         if key in memo:
             return memo[key]
 
-        # EV si on stand maintenant (soft_aces ne change rien si on stand)
         ev_stand = CalculateurProbabilites.ev_stand(total, dealer_dist)
 
-        # EV si on hit encore
+        # Coupure logique : inutile d'explorer hit sur 20 ou 21
+        if total >= 20:
+            memo[key] = ev_stand
+            return ev_stand
+
+        cartes_restantes = sum(counts.values())
+        if cartes_restantes == 0:
+            memo[key] = ev_stand
+            return ev_stand
+
         ev_hit = 0.0
-        for valeur, proba in dist_valeurs.items():
-            new_total = total + valeur
-            new_soft = soft_aces + (1 if valeur == 11 else 0)
 
-            # Ajustement des As soft si on dépasse 21
-            while new_total > 21 and new_soft > 0:
-                new_total -= 10
-                new_soft -= 1
+        for valeur, nb in list(counts.items()):
+            if nb <= 0:
+                continue
 
-            ev_hit += proba * CalculateurProbabilites.ev_hit_recursive(
-                new_total, new_soft, dealer_dist, dist_valeurs, memo
+            proba = nb / cartes_restantes
+
+            new_total, new_soft = CalculateurProbabilites._etat_apres_valeur(
+                total, soft_aces, valeur
             )
+
+            counts[valeur] -= 1
+            if counts[valeur] == 0:
+                del counts[valeur]
+
+            ev_hit += proba * CalculateurProbabilites.ev_hit_recursive_counts(
+                new_total,
+                new_soft,
+                counts,
+                dealer_dist,
+                memo
+            )
+
+            counts[valeur] = nb
 
         ev_opt = max(ev_stand, ev_hit)
         memo[key] = ev_opt
@@ -187,17 +227,20 @@ class CalculateurProbabilites:
 
     @staticmethod
     def ev_optimal(main_joueur, sabot_cond, dealer_dist):
-        total_initial, soft_aces_initial = CalculateurProbabilites._etat_main(main_joueur)
-        dist_valeurs = CalculateurProbabilites.distribution_prochaine_carte(sabot_cond)
+        total, soft_aces = CalculateurProbabilites._etat_main(main_joueur)
+        counts = Counter(c.valeur_blackjack() for c in sabot_cond.cartes)
 
-        return CalculateurProbabilites.ev_hit_recursive(
-            total_initial, soft_aces_initial, dealer_dist, dist_valeurs
+        return CalculateurProbabilites.ev_hit_recursive_counts(
+            total,
+            soft_aces,
+            counts,
+            dealer_dist
         )
 
     @staticmethod
     def resume_spot(main_joueur, dealer_upcard, sabot, nb_simulations_dealer=5000, dealer_hole_card=None):
 
-        sabot_cond = sabot.clone()
+        sabot_cond = CalculateurProbabilites._sabot_vue_joueur(sabot, dealer_hole_card)
 
         dist_hit = CalculateurProbabilites.distribution_nouveau_total_si_hit(main_joueur, sabot_cond)
         p_bust = dist_hit.get("bust", 0.0)
@@ -208,12 +251,7 @@ class CalculateurProbabilites:
             if total_final != "bust" and t < total_final <= 21:
                 p_ameliorer += prob
 
-        dealer_dist = CalculateurProbabilites.dealer_distribution(
-            sabot_cond,
-            dealer_upcard,
-            nb_simulations_dealer,
-            dealer_hole_card
-        )
+        dealer_dist = CalculateurProbabilites.dealer_distribution(sabot_cond, dealer_upcard, nb_simulations_dealer)
 
         t = main_joueur.valeur_totale()
         ev_stand = CalculateurProbabilites.ev_stand(t, dealer_dist)
@@ -278,7 +316,7 @@ class CalculateurProbabilites:
         return gains_cumules
 
     @staticmethod
-    def simuler_monte_carlo(main_joueur, dealer, sabot, nb_simulations=1000):
+    def simuler_monte_carlo(main_joueur, dealer, sabot, nb_simulations=1000, dealer_hole_card=None):
         if not dealer.cartes or not main_joueur.cartes:
             return {}
 
@@ -292,7 +330,10 @@ class CalculateurProbabilites:
 
             for _ in range(nb_simulations):
                 # Cloner l'état du sabot pour simuler une manche réaliste
-                s = sabot.clone()
+                s = CalculateurProbabilites._sabot_vue_joueur(
+                    sabot,
+                    dealer_hole_card
+                )
                 s.melanger_sans_reset()
 
                 # Recréer la main du joueur à partir de la vraie main actuelle
@@ -312,14 +353,11 @@ class CalculateurProbabilites:
                 sim_dealer = MainJoueur()
                 sim_dealer.ajouter_carte(dealer.cartes[0])
 
-                # Si la vraie carte caché existe déjà, on l'utilise
-                if len(dealer.cartes) >= 2:
-                    sim_dealer.ajouter_carte(dealer.cartes[1])
-                else:
-                    carte_cachee = s.tirer()
-                    if carte_cachee is None:
-                        continue
-                    sim_dealer.ajouter_carte(carte_cachee)
+                carte_cachee = s.tirer()
+                if carte_cachee is None:
+                    continue
+
+                sim_dealer.ajouter_carte(carte_cachee)
 
                 # Le dealer joue (règle: s'arrête à 17)
                 while sim_dealer.valeur_totale() < 17:

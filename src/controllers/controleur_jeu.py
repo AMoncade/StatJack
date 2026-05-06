@@ -180,7 +180,8 @@ class ControleurJeu:
                         main_joueur=main_active,
                         dealer=self.jeu.dealer,
                         sabot=self.jeu.sabot,
-                        nb_simulations=500
+                        nb_simulations=500,
+                        dealer_hole_card = self.jeu.dealer.cartes[1] if len(self.jeu.dealer.cartes) >= 2 else None
                     )
 
                     # On conserve la signature existante (2 nombres)
