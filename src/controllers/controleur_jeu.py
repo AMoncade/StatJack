@@ -2,6 +2,7 @@ from src.models.jeu import Jeu
 from src.models.probabilites import CalculateurProbabilites
 from src.views.vue_jeu import VueJeu, PHASE_MISE, PHASE_JEU, PHASE_RESULTAT
 from src.views.widgets.graphe_simulation import GrapheSimulation
+from src.controllers.workers.worker_probas import WorkerProbas
 
 
 class ControleurJeu:
@@ -18,6 +19,9 @@ class ControleurJeu:
         self.vue.miser_clique.connect(self.action_miser)
         self.vue.prochaine_manche_clique.connect(self.prochaine_manche)
         self.vue.voir_graphe_clique.connect(self.voir_graphe)
+
+        self._worker_probas = None
+        self._id_calcul_probas = 0
 
     def action_miser(self, principale):
         if self.jeu.manche_en_cours:
@@ -145,13 +149,12 @@ class ControleurJeu:
         self.vue.afficher_infos_joueur(self.jeu.joueur)
         self._rafraichir_argent()
 
-        # Probabilites
+        # Probabilités
         if not reveler:
-            # main active (si split)
             try:
                 main_active = self.jeu.mains_joueur[self.jeu.index_main_active]
             except Exception:
-                main_active = self.jeu.joueur  # fallback
+                main_active = self.jeu.joueur
 
             dealer_upcard = self.jeu.dealer.cartes[0] if self.jeu.dealer.cartes else None
 
@@ -161,52 +164,7 @@ class ControleurJeu:
                 self.vue.lbl_ameliorer.setText("Améliorer la main : --")
                 self.vue.lbl_reco_ev.setText("Reco / EV : --")
             else:
-                try:
-                    spot = CalculateurProbabilites.resume_spot(
-                        main_joueur=main_active,
-                        dealer_upcard=dealer_upcard,
-                        sabot=self.jeu.sabot,
-                        nb_simulations_dealer=5000,
-                        dealer_hole_card=self.jeu.dealer.cartes[1] if len(self.jeu.dealer.cartes) >= 2 else None
-                    )
-
-                    pct_bust = spot.get("p_bust_si_hit", 0.0) * 100.0
-                    pct_ameliorer = spot.get("p_ameliorer_si_hit", 0.0) * 100.0
-                    ev_stand = spot.get("ev_stand", 0.0)
-                    ev_opt = spot.get("ev_optimal", 0.0)
-                    reco = spot.get("recommandation", "--")
-                    edge_pct = (ev_opt - ev_stand) * 100.0
-                    stats_action = CalculateurProbabilites.simuler_monte_carlo(
-                        main_joueur=main_active,
-                        dealer=self.jeu.dealer,
-                        sabot=self.jeu.sabot,
-                        nb_simulations=500,
-                        dealer_hole_card=self.jeu.dealer.cartes[1] if len(self.jeu.dealer.cartes) >= 2 else None
-                    )
-
-                    # On conserve la signature existante (2 nombres)
-                    self.vue.maj_probabilites(pct_bust, edge_pct, pct_ameliorer, stats_action)
-
-                    self.vue.lbl_reco_ev.setText(
-                        f"Reco : {reco}\n"
-                        f"EV stand : {ev_stand:+.3f}\n"
-                        f"EV opt : {ev_opt:+.3f}\n"
-                        f"Edge décision : {edge_pct:+.1f}%"
-                    )
-
-                    # Optionnel : si ta vue a un widget pour afficher la distribution de hit
-                    if hasattr(self.vue, "maj_distribution_hit"):
-                        self.vue.maj_distribution_hit(
-                            spot.get("distribution_total_si_hit", {})
-                        )
-
-                except Exception as e:
-                    # Si clone/retirer_* ou autre n'est pas dispo, on ne casse pas l'UI
-                    print("Erreur probabilités :", e)
-                    self.vue.maj_probabilites(0, 0, 0)
-                    self.vue.lbl_bust.setText("Bust : --")
-                    self.vue.lbl_ameliorer.setText("Améliorer la main : --")
-                    self.vue.lbl_reco_ev.setText("Reco / EV : --")
+                self._lancer_calcul_probas(main_active)
         else:
             self.vue.maj_probabilites(0, 0, 0)
             self.vue.lbl_bust.setText("Bust : --")
@@ -217,7 +175,6 @@ class ControleurJeu:
         sabot = self.jeu.sabot
         total = sabot.nb_paquets * 52
 
-        # Calcul de l'avantage
         tc = sabot.true_count()
         avantage_joueur = -0.5 + (tc * 0.5)
 
@@ -247,6 +204,72 @@ class ControleurJeu:
     def _rafraichir_argent(self):
         if self.jeu.banque:
             self.vue.afficher_argent(self.jeu.banque.solde)
+
+    def _lancer_calcul_probas(self, main_active):
+        if self._worker_probas and self._worker_probas.isRunning():
+            self._worker_probas.quit()
+            self._worker_probas.wait(50)
+
+        self._id_calcul_probas += 1
+
+        self._worker_probas = WorkerProbas(
+            id_calcul=self._id_calcul_probas,
+            main_joueur=main_active,
+            dealer=self.jeu.dealer,
+            sabot=self.jeu.sabot,
+            parent=self.vue,
+        )
+
+        self._worker_probas.termine.connect(self._recevoir_probas)
+        self._worker_probas.erreur.connect(self._erreur_probas)
+        self._worker_probas.start()
+
+    def _recevoir_probas(self, id_calcul, resultats):
+        if id_calcul != self._id_calcul_probas:
+            return
+
+        if not resultats:
+            self.vue.maj_probabilites(0, 0, 0)
+            return
+
+        spot = resultats["spot"]
+        stats_action = resultats["stats_action"]
+
+        pct_bust = spot.get("p_bust_si_hit", 0.0) * 100.0
+        pct_ameliorer = spot.get("p_ameliorer_si_hit", 0.0) * 100.0
+        ev_stand = spot.get("ev_stand", 0.0)
+        ev_opt = spot.get("ev_optimal", 0.0)
+        reco = spot.get("recommandation", "--")
+        edge_pct = (ev_opt - ev_stand) * 100.0
+
+        self.vue.maj_probabilites(
+            pct_bust,
+            edge_pct,
+            pct_ameliorer,
+            stats_action
+        )
+
+        self.vue.lbl_reco_ev.setText(
+            f"Reco : {reco}\n"
+            f"EV stand : {ev_stand:+.3f}\n"
+            f"EV opt : {ev_opt:+.3f}\n"
+            f"Edge décision : {edge_pct:+.1f}%"
+        )
+
+        if hasattr(self.vue, "maj_distribution_hit"):
+            self.vue.maj_distribution_hit(
+                spot.get("distribution_total_si_hit", {})
+            )
+
+    def _erreur_probas(self, id_calcul, message):
+        if id_calcul != self._id_calcul_probas:
+            return
+
+        print("Erreur probabilités :", message)
+        self.vue.maj_probabilites(0, 0, 0)
+        self.vue.lbl_bust.setText("Bust : --")
+        self.vue.lbl_ameliorer.setText("Améliorer la main : --")
+        self.vue.lbl_reco_ev.setText("Reco / EV : --")
 
     def _vider_cartes(self):
         self.vue._vider_layout(self.vue.layout_cartes_dealer)
