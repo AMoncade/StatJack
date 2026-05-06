@@ -188,9 +188,6 @@ class CalculateurProbabilites:
     def resume_spot(main_joueur, dealer_upcard, sabot, nb_simulations_dealer=5000):
 
         sabot_cond = sabot.clone()
-        if hasattr(sabot_cond, "retirer_cartes"):
-            sabot_cond.retirer_cartes(main_joueur.cartes)
-            sabot_cond.retirer_carte(dealer_upcard)
 
         dist_hit = CalculateurProbabilites.distribution_nouveau_total_si_hit(main_joueur, sabot_cond)
         p_bust = dist_hit.get("bust", 0.0)
