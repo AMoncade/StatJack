@@ -1,3 +1,5 @@
+import os
+import sys
 from pathlib import Path
 
 from PySide6.QtCore import QObject, QUrl
@@ -24,7 +26,14 @@ class AudioManager(QObject):
 
         self.music_player = QMediaPlayer(self)
         self.music_player.setAudioOutput(self.audio_output)
+
+        devnull = os.open(os.devnull, os.O_WRONLY)
+        old_stderr = os.dup(2)
+        os.dup2(devnull, 2)
         self.music_player.setSource(QUrl.fromLocalFile(str(self.theme.resolve())))
+        os.dup2(old_stderr, 2)
+        os.close(devnull)
+        os.close(old_stderr)
 
         # Essaie ceci d'abord si ta version le supporte
         try:
