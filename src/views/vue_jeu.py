@@ -2,11 +2,11 @@ import io
 
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel,
-    QPushButton, QFrame, QGraphicsOpacityEffect,
+    QPushButton, QFrame,
     QToolButton, QDialog, QTextEdit, QSizePolicy
 )
-from PySide6.QtCore import Signal, Qt, QPropertyAnimation, QEasingCurve, QTimer
-from PySide6.QtGui import QColor, QPixmap, QImage
+from PySide6.QtCore import Signal, Qt, QTimer
+from PySide6.QtGui import QPixmap, QImage
 
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_agg import FigureCanvasAgg
@@ -72,9 +72,9 @@ class VueJeu(QWidget):
             },
 
             "reco_ev": {
-                "titre": "Reco / EV",
+                "titre": "Reco HIT/STAND / EV",
                 "texte": (
-                    "Reco : action recommandée selon les calculs.\n\n"
+                    "Reco HIT/STAND : action recommandée entre rester et tirer.\n\n"
                     "EV stand : valeur attendue si la main reste telle quelle.\n"
                     "EV opt : meilleure valeur attendue possible entre rester "
                     "ou continuer à tirer de façon optimale.\n"

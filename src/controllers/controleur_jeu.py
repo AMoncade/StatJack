@@ -206,13 +206,9 @@ class ControleurJeu:
             self.vue.afficher_argent(self.jeu.banque.solde)
 
     def _lancer_calcul_probas(self, main_active):
-        if self._worker_probas and self._worker_probas.isRunning():
-            self._worker_probas.quit()
-            self._worker_probas.wait(50)
-
         self._id_calcul_probas += 1
 
-        self._worker_probas = WorkerProbas(
+        worker = WorkerProbas(
             id_calcul=self._id_calcul_probas,
             main_joueur=main_active,
             dealer=self.jeu.dealer,
@@ -220,9 +216,13 @@ class ControleurJeu:
             parent=self.vue,
         )
 
-        self._worker_probas.termine.connect(self._recevoir_probas)
-        self._worker_probas.erreur.connect(self._erreur_probas)
-        self._worker_probas.start()
+        self._worker_probas = worker
+
+        worker.termine.connect(self._recevoir_probas)
+        worker.erreur.connect(self._erreur_probas)
+        worker.finished.connect(worker.deleteLater)
+
+        worker.start()
 
     def _recevoir_probas(self, id_calcul, resultats):
         if id_calcul != self._id_calcul_probas:
@@ -250,7 +250,7 @@ class ControleurJeu:
         )
 
         self.vue.lbl_reco_ev.setText(
-            f"Reco : {reco}\n"
+            f"Reco HIT/STAND : {reco}\n"
             f"EV stand : {ev_stand:+.3f}\n"
             f"EV opt : {ev_opt:+.3f}\n"
             f"Edge décision : {edge_pct:+.1f}%"
