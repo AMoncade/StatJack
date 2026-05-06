@@ -85,9 +85,6 @@ class ControleurJeu:
             return
         if not self.jeu.joueur.peut_double():
             return
-        if self.settings.get("mode_entrainement"):
-            if not self._verifier_decision_mathematique("Double"):
-                return
         carte = self.jeu.joueur_double()
         if carte is None:
             return
@@ -108,9 +105,6 @@ class ControleurJeu:
             return
         if not self.jeu.joueur.peut_split():
             return
-        if self.settings.get("mode_entrainement"):
-            if not self._verifier_decision_mathematique("Split"):
-                return
         if not self.jeu.joueur_split():
             return
         self.audio.jouer_son_hit()
@@ -217,8 +211,13 @@ class ControleurJeu:
 
             self.vue.btn_hit.setEnabled(peut_jouer)
             self.vue.btn_stand.setEnabled(peut_jouer)
-            self.vue.activer_double(peut_jouer and self.jeu.joueur.peut_double())
-            self.vue.activer_split(peut_jouer and self.jeu.joueur.peut_split())
+
+            if mode_actif:
+                self.vue.activer_double(False)
+                self.vue.activer_split(False)
+            else:
+                self.vue.activer_double(peut_jouer and self.jeu.joueur.peut_double())
+                self.vue.activer_split(peut_jouer and self.jeu.joueur.peut_split())
         else:
             self.vue.btn_hit.setEnabled(False)
             self.vue.btn_stand.setEnabled(False)
