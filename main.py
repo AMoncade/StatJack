@@ -95,9 +95,14 @@ def main():
     def aller_parametres():
         nonlocal page_precedente
         page_precedente = fenetre.stack.currentIndex()
+        en_partie = page_precedente == PAGE_JEU and jeu.manche_en_cours
+        vue_params.spin_paquets.setEnabled(not en_partie)
         fenetre.aller_a(PAGE_PARAMETRES)
 
     def retour_depuis_parametres():
+        if page_precedente == PAGE_JEU and not jeu.manche_en_cours:
+            from src.models.sabot import Sabot
+            jeu.sabot = Sabot(nb_paquets=settings.get("nb_paquets"))
         fenetre.aller_a(page_precedente)
 
     menu.jouer_clique.connect(aller_jouer)
