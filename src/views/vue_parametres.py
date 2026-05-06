@@ -40,6 +40,20 @@ class VueParametres(QWidget):
 
         layout.addSpacing(10)
 
+        self.check_entrainement = QCheckBox("Mode Entraînement (Interception)")
+        self.check_entrainement.setStyleSheet(style_check)
+
+        mode_actif = self.settings.get("mode_entrainement") if self.settings.get(
+            "mode_entrainement") is not None else False
+        self.check_entrainement.setChecked(mode_actif)
+
+        self.check_entrainement.toggled.connect(
+            lambda v: self.settings.set("mode_entrainement", v)
+        )
+        layout.addWidget(self.check_entrainement, alignment=Qt.AlignCenter)
+
+        layout.addSpacing(10)
+
         row_paquets = QHBoxLayout()
         row_paquets.setAlignment(Qt.AlignCenter)
         lbl_paquets = QLabel("Nombre de paquets :")

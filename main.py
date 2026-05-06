@@ -72,7 +72,7 @@ def main():
     fenetre.ajouter_page(vue_tuto)
 
     # Controleurs
-    ctrl_jeu = ControleurJeu(vue_jeu, jeu, audio)
+    ctrl_jeu = ControleurJeu(vue_jeu, jeu, audio, settings= settings)
     ctrl_tuto = ControleurTutoriel(vue_tuto)
 
     # Navigation depuis le menu

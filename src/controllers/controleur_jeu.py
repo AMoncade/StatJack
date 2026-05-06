@@ -7,10 +7,11 @@ from src.controllers.workers.worker_probas import WorkerProbas
 
 class ControleurJeu:
 
-    def __init__(self, vue: VueJeu, jeu: Jeu, audio_manager):
+    def __init__(self, vue: VueJeu, jeu: Jeu, audio_manager, settings):
         self.vue = vue
         self.jeu = jeu
         self.audio = audio_manager
+        self.settings = settings
 
         self.vue.hit_clique.connect(self.action_hit)
         self.vue.stand_clique.connect(self.action_stand)
@@ -46,6 +47,9 @@ class ControleurJeu:
             return
         if self.jeu.joueur.est_busted():
             return
+        if self.settings.get("mode_entrainement") == True:
+            if not self._verifier_decision_mathematique("Hit"):
+                return
         carte = self.jeu.joueur_tire()
         if carte is None:
             return
@@ -66,6 +70,9 @@ class ControleurJeu:
             return
         if self.jeu.joueur.est_busted():
             return
+        if self.settings.get("mode_entrainement") == True:
+            if not self._verifier_decision_mathematique("Hit"):
+                return
         if not self.jeu.passer_main_suivante():
             self._finir_manche()
         else:
@@ -78,6 +85,9 @@ class ControleurJeu:
             return
         if not self.jeu.joueur.peut_double():
             return
+        if self.settings.get("mode_entrainement") == True:
+            if not self._verifier_decision_mathematique("Hit"):
+                return
         carte = self.jeu.joueur_double()
         if carte is None:
             return
@@ -98,6 +108,9 @@ class ControleurJeu:
             return
         if not self.jeu.joueur.peut_split():
             return
+        if self.settings.get("mode_entrainement") == True:
+            if not self._verifier_decision_mathematique("Hit"):
+                return
         if not self.jeu.joueur_split():
             return
         self.audio.jouer_son_hit()
@@ -277,3 +290,33 @@ class ControleurJeu:
         self.vue.label_dealer.setText("Dealer")
         self.vue.label_joueur.setText("Vous")
         self.vue.label_main_active.setText("")
+
+    def _verifier_decision_mathematique(self, action_choisie):
+        try:
+            main_active = self.jeu.mains_joueur[self.jeu.index_main_active]
+        except Exception:
+            main_active = self.jeu.joueur
+
+        dealer_upcard = self.jeu.dealer.cartes[0] if self.jeu.dealer.cartes else None
+
+        if dealer_upcard is None:
+            return True
+
+        spot = CalculateurProbabilites.resume_spot(
+            main_joueur=main_active,
+            dealer_upcard=dealer_upcard,
+            sabot=self.jeu.sabot,
+            nb_simulations_dealer=1000,
+            dealer_hole_card=self.jeu.dealer.cartes[1] if len(self.jeu.dealer.cartes) >= 2 else None
+        )
+
+        reco_optimale = spot.get("recommandation", "Stand")
+
+        if action_choisie.lower() not in reco_optimale.lower():
+            self.vue.afficher_avertissement_entrainement(
+                action_joueur=action_choisie,
+                action_optimale=reco_optimale
+            )
+            return False
+
+        return True
