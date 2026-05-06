@@ -9,7 +9,7 @@ class GrapheSimulation(QDialog):
 
     def __init__(self, sabot, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("Simulation Monte Carlo — Loi des grands nombres")
+        self.setWindowTitle("Simulation Monte Carlo — Stratégie de Base simplifiée")
         self.resize(700, 450)
 
         layout = QVBoxLayout(self)
