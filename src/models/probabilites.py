@@ -294,14 +294,17 @@ class CalculateurProbabilites:
                 if sim_joueur.est_busted():
                     continue  # Défaite automatique (Bust)
 
-                # Le dealer joue avec sa vraie carte visible + une carte cachée aléatoire
                 sim_dealer = MainJoueur()
                 sim_dealer.ajouter_carte(dealer.cartes[0])
 
-                carte_cachee = s.tirer()
-                if carte_cachee is None:
-                    continue
-                sim_dealer.ajouter_carte(carte_cachee)
+                # Si la vraie carte caché existe déjà, on l'utilise
+                if len(dealer.cartes) >= 2:
+                    sim_dealer.ajouter_carte(dealer.cartes[1])
+                else:
+                    carte_cachee = s.tirer()
+                    if carte_cachee is None:
+                        continue
+                    sim_dealer.ajouter_carte(carte_cachee)
 
                 # Le dealer joue (règle: s'arrête à 17)
                 while sim_dealer.valeur_totale() < 17:
