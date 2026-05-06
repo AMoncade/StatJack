@@ -131,8 +131,19 @@ class ControleurJeu:
         self._rafraichir(reveler=True)
 
         # Animation et son selon résultat
-        a_gagne = any("Gagné" in r or "Blackjack" in r for r in resultats)
-        a_perdu = any("Perdu" in r or "Bust" in r for r in resultats)
+        a_gagne = any(
+            r == "Gagné"
+            or r == "Gagné (Dealer Bust)"
+            or r == "Blackjack!"
+            for r in resultats
+        )
+
+        a_perdu = any(
+            r.startswith("Perdu")
+            or r == "Perdu (Bust)"
+            for r in resultats
+        )
+
         egalite = all("Égalité" in r for r in resultats)
 
         if egalite:
