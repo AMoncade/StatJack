@@ -280,11 +280,6 @@ class CalculateurProbabilites:
                 s = sabot.clone()
                 s.melanger_sans_reset()
 
-                # Retirer les cartes déjà connues pour éviter de les repiger
-                if hasattr(s, "retirer_cartes"):
-                    s.retirer_cartes(main_joueur.cartes)
-                if hasattr(s, "retirer_carte") and dealer.cartes:
-                    s.retirer_carte(dealer.cartes[0])
                 # Recréer la main du joueur à partir de la vraie main actuelle
                 sim_joueur = MainJoueur()
                 for carte in main_joueur.cartes:
