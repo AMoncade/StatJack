@@ -573,7 +573,7 @@ class VueJeu(QWidget):
             for carte in main.cartes:
                 w = CarteWidget(carte)
                 if len(mains) > 1 and i == index_actif:
-                    w.setStyleSheet(w.styleSheet() + "border: 6px solid #FFD700;")
+                    w.setStyleSheet(w.styleSheet() + "border: 4px solid #FFD700;")
                 self.layout_cartes_joueur.addWidget(w)
             if i < len(mains) - 1:
                 sep_lbl = QLabel("|")
