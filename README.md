@@ -32,7 +32,8 @@ L'objectif n'est pas de créer un jeu de hasard, mais un **outil pédagogique** 
 | PySide6 | Interface graphique (signaux/slots) |
 | Matplotlib | Graphiques de variance et progression |
 | NumPy | Calculs vectoriels et simulations |
-* **Recommandation :** Les recommandations HIT/STAND sont basées sur un calcul récursif d’espérance mathématique tandis que les statistiques Monte Carlo servent principalement d’outil visuel et pédagogique.
+> [!NOTE]
+> *Les recommandations HIT/STAND sont basées sur un calcul récursif d’espérance mathématique, tandis que les statistiques Monte Carlo servent principalement d’outil visuel et pédagogique.*
 
 ## Architecture
 
@@ -74,7 +75,8 @@ src/
 - **Système Hi-Lo** — Comptage de cartes (+1, 0, -1) pour estimer l'avantage du joueur
 - **Loi des grands nombres** — Convergence des gains réels vers l'espérance mathématique
 - **Simulations Monte Carlo** — Estimation empirique des probabilités par milliers de mains simulées
-- **Recommandations** — Les recommandations HIT/STAND sont basées sur un calcul récursif d’espérance mathématique tandis que les statistiques Monte Carlo servent principalement d’outil visuel et pédagogique.
+> 
+> *Les recommandations HIT/STAND sont basées sur un calcul récursif d’espérance mathématique, tandis que les statistiques Monte Carlo servent principalement d’outil visuel et pédagogique.*
 
 
 ## Lien scientifique
