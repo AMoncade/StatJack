@@ -85,6 +85,7 @@ Le calcul de la stratégie de base repose sur l'Espérance Mathématique (EV) po
 
 - [Analyse préliminaire](https://1drv.ms/w/c/cbccbcda01405813/IQD0b8YEEk-0QJC7kS6ey4HVATgH1v-i00KOF11j9KeUFrU?e=Rt8VQe)
 - [Analyse révisée](https://1drv.ms/w/c/cbccbcda01405813/IQBhCfqGLlQGRYnnEZk-Ila5AV9sm9vCxHsxAm_NjsMMAJM?e=7bByPd)
+- [Analyse révisée](https://amoncade.github.io/statjack-presentation/)
 
 ---
 *Développé dans le cadre du cours « Projet d'intégration SIM » au Cégep de St-Hyacinthe — Hiver 2026*
