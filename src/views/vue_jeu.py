@@ -845,7 +845,7 @@ class VueJeu(QWidget):
 
     def afficher_avertissement_entrainement(self, action_joueur, action_optimale):
         msg_box = QMessageBox(self)
-        msg_box.setIcon(QMessageBox.Warning)
+        msg_box.setIcon(QMessageBox.Icon.Warning)
         msg_box.setWindowTitle("Mode Entraînement - Erreur Stratégique")
 
         texte = f"Attention ! Votre choix de <b>{action_joueur.capitalize()}</b> est mathématiquement sous-optimal.<br><br>"
@@ -854,8 +854,8 @@ class VueJeu(QWidget):
         msg_box.setText(texte)
         msg_box.setInformativeText("Voulez-vous corriger votre action ou continuer malgré tout ?")
 
-        btn_corriger = msg_box.addButton("Corriger", QMessageBox.AcceptRole)
-        btn_continuer = msg_box.addButton("Continuer quand même", QMessageBox.ActionRole)
+        btn_corriger = msg_box.addButton("Corriger", QMessageBox.ButtonRole.AcceptRole)
+        btn_continuer = msg_box.addButton("Continuer quand même", QMessageBox.ButtonRole.ActionRole)
         msg_box.setDefaultButton(btn_corriger)
         msg_box.setEscapeButton(btn_corriger)
 
